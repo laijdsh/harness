@@ -25,6 +25,11 @@ application-local.yml
 __pycache__/
 *.pyc
 
+# 用户提供的原始论文/开题报告（含个人信息，不提交公开仓库）
+thesis/reference/
+thesis/archive/论文初稿-桌面版-原始.docx
+thesis/论文初稿-脚注原始.docx
+
 # 操作系统生成文件
 .DS_Store
 Thumbs.db
