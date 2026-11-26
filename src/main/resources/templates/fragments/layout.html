@@ -36,7 +36,8 @@
                        th:href="@{/alerts}">告警</a>
                 </li>
                 <li class="nav-item">
-                    <span class="nav-link disabled">看板（阶段 5）</span>
+                    <a class="nav-link" th:classappend="${active == 'dashboard'} ? 'active' : ''"
+                       th:href="@{/dashboard}">看板</a>
                 </li>
             </ul>
         </div>
@@ -46,7 +47,7 @@
 <footer th:fragment="footer" class="nm-footer">
     <div class="container d-flex justify-content-between flex-wrap gap-2">
         <span>轻量级网络设备状态监测与异常告警系统</span>
-        <span>本科毕业设计 · 阶段 4</span>
+        <span>本科毕业设计 · 阶段 5</span>
     </div>
 </footer>
 

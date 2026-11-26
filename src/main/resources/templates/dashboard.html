@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('数据看板')}"></head>
+<body>
+
+<nav th:replace="~{fragments/layout :: navbar('dashboard')}"></nav>
+
+<main class="container py-4 py-lg-5 dashboard-page">
+    <div class="page-header dashboard-header">
+        <div>
+            <span class="eyebrow">DASHBOARD · PHASE 5</span>
+            <h1>运行态势看板</h1>
+            <p>设备在线情况、响应时间趋势和告警状态，全部来自真实监测数据。</p>
+        </div>
+        <div class="header-actions">
+            <a class="btn btn-outline-secondary" th:href="@{/alerts}">告警中心</a>
+            <button id="refresh-dashboard" class="btn btn-primary" type="button">刷新数据</button>
+        </div>
+    </div>
+
+    <div class="dashboard-note">
+        累计监测记录：<strong id="summary-monitor-records">--</strong> 条
+        <span class="dashboard-note-sep">·</span>
+        最近刷新：<strong id="summary-generated-at">--</strong>
+    </div>
+
+    <section class="summary-grid" aria-label="看板汇总">
+        <article class="summary-card">
+            <span class="summary-label">设备总数</span>
+            <strong id="summary-device-total" class="summary-value">--</strong>
+            <p>已登记的网络设备</p>
+        </article>
+        <article class="summary-card summary-online">
+            <span class="summary-label">在线设备</span>
+            <strong id="summary-online" class="summary-value">--</strong>
+            <p>最近一次检测为 ONLINE</p>
+        </article>
+        <article class="summary-card summary-offline">
+            <span class="summary-label">离线设备</span>
+            <strong id="summary-offline" class="summary-value">--</strong>
+            <p>最近一次检测为 OFFLINE</p>
+        </article>
+        <article class="summary-card summary-alert">
+            <span class="summary-label">未恢复告警</span>
+            <strong id="summary-active-alerts" class="summary-value">--</strong>
+            <p>OPEN + ACKNOWLEDGED</p>
+        </article>
+    </section>
+
+    <section class="chart-grid">
+        <article class="chart-card chart-wide">
+            <div class="chart-card-header">
+                <div>
+                    <h2>最近 24 小时响应时间趋势</h2>
+                    <p>按 30 分钟聚合，空值表示该时段没有在线检测数据。</p>
+                </div>
+                <span class="chart-badge">单位：ms</span>
+            </div>
+            <div id="response-time-chart" class="chart-box chart-box-trend"></div>
+        </article>
+
+        <article class="chart-card">
+            <div class="chart-card-header">
+                <div>
+                    <h2>设备状态分布</h2>
+                    <p>在线、离线、未知和检测异常</p>
+                </div>
+            </div>
+            <div id="device-status-chart" class="chart-box"></div>
+        </article>
+
+        <article class="chart-card">
+            <div class="chart-card-header">
+                <div>
+                    <h2>告警状态分布</h2>
+                    <p>未恢复、已确认和已恢复</p>
+                </div>
+            </div>
+            <div id="alert-distribution-chart" class="chart-box"></div>
+        </article>
+    </section>
+
+    <section class="table-card dashboard-table-card">
+        <div class="table-card-header">
+            <div>
+                <h2>最近告警</h2>
+                <p>最近 5 条告警记录，完整列表请进入告警中心。</p>
+            </div>
+            <a class="btn btn-sm btn-outline-secondary" th:href="@{/alerts}">查看全部</a>
+        </div>
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead>
+                <tr>
+                    <th scope="col">触发时间</th>
+                    <th scope="col">设备</th>
+                    <th scope="col">类型</th>
+                    <th scope="col">级别</th>
+                    <th scope="col">状态</th>
+                    <th scope="col">次数</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="alert : ${recentAlerts}">
+                    <td class="text-nowrap" th:text="${alert.triggeredAtText}">2026-11-26 19:04:49</td>
+                    <td>
+                        <a class="device-name" th:href="@{/devices/{id}(id=${alert.deviceId})}"
+                           th:text="${alert.deviceName}">出口路由器</a>
+                    </td>
+                    <td th:text="${alert.alertType.displayName}">设备离线</td>
+                    <td>
+                        <span class="badge" th:classappend="${alert.alertLevel.cssClass}"
+                              th:text="${alert.alertLevel.displayName}">严重</span>
+                    </td>
+                    <td>
+                        <span class="badge" th:classappend="${alert.status.cssClass}"
+                              th:text="${alert.status.displayName}">已确认</span>
+                    </td>
+                    <td th:text="${alert.occurrenceCount}">1</td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(recentAlerts)}">
+                    <td colspan="6">
+                        <div class="empty-state py-4">
+                            <h3>暂无告警记录</h3>
+                            <p>异常达到规则后会显示在这里。</p>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<script th:src="@{/vendor/echarts/echarts.min.js}"></script>
+<script th:src="@{/js/dashboard.js}"></script>
+</body>
+</html>

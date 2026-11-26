@@ -1,5 +1,6 @@
 package com.networkmonitor.repository;
 
+import com.networkmonitor.entity.DeviceStatus;
 import com.networkmonitor.entity.DeviceType;
 import com.networkmonitor.entity.NetworkDevice;
 import org.springframework.data.domain.Page;
@@ -26,6 +27,11 @@ public interface NetworkDeviceRepository extends JpaRepository<NetworkDevice, Lo
      * 修改设备时判断 IP 是否被其他设备占用。
      */
     boolean existsByIpAddressAndIdNot(String ipAddress, Long id);
+
+    /**
+     * 按设备状态统计数量，用于看板汇总。
+     */
+    long countByStatus(DeviceStatus status);
 
     /**
      * 按关键字和设备类型分页搜索。

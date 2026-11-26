@@ -1,7 +1,7 @@
 # 轻量级网络设备状态监测与异常告警系统
 
 > 本科毕业设计项目  
-> 当前进度：**阶段 4（异常检测与告警）已完成**
+> 当前进度：**阶段 5（ECharts 数据看板）已完成**
 
 ## 1. 项目简介
 
@@ -75,6 +75,30 @@
 
 ![阶段 4 告警筛选](screenshots/17-phase4-alert-filtered.png)
 
+### 阶段 5：ECharts 数据看板
+
+- 新增 `/dashboard` 运行态势看板
+- 汇总设备总数、在线、离线、未恢复告警和监测记录数
+- 最近 24 小时平均响应时间趋势
+- 设备状态分布环图
+- 告警状态分布环图
+- 最近 5 条告警列表
+- ECharts 5.6.0 文件放在 `static/vendor/echarts/`，运行时不依赖 CDN
+- 不新增数据库表，直接聚合已有数据
+
+当前阶段实际验证结果：
+
+- Maven 构建：`BUILD SUCCESS`，53 个源文件
+- 看板汇总：4 台设备、在线 3、离线 1、未恢复告警 1、监测记录 1327 条
+- 24 小时趋势：49 个 30 分钟时间桶；有数据的桶约 83/87 条记录
+- 告警分布：未恢复 0、已确认 1、已恢复 2
+- `/dashboard` 页面 HTTP 200
+- ECharts 本地文件 HTTP 200，大小约 1.03MB
+- 点击“刷新数据”后汇总时间更新
+- 浏览器控制台：0 error / 0 warning
+
+![阶段 5 数据看板](screenshots/19-phase5-dashboard.png)
+
 ## 3. 技术栈
 
 | 层次 | 技术 | 版本 |
@@ -89,6 +113,7 @@
 | 数据库连接池 | HikariCP | 由 Spring Boot 管理 |
 | 模板引擎 | Thymeleaf | 由 Spring Boot 管理 |
 | 前端框架 | Bootstrap | 5.3.9（本地静态文件） |
+| 图表库 | Apache ECharts | 5.6.0（本地静态文件） |
 | 网络探测 | 操作系统 `ping.exe` | Windows 自带 |
 | 前端 | HTML5 / CSS3 / 原生 JavaScript | 不引入 Node.js |
 | IDE | VS Code + Java/Spring 扩展 | 1.97.2 |
@@ -213,7 +238,7 @@ java -jar target/network-monitor-system.jar --monitor.scheduler.enabled=false
 
 详细字段、索引和约束见 [docs/数据库设计.md](docs/数据库设计.md)。
 
-## 7. 目录结构（阶段 4 关键文件）
+## 7. 目录结构（阶段 5 关键文件）
 
 ```text
 network-monitor-system/
@@ -222,15 +247,20 @@ network-monitor-system/
 │   │   ├── DeviceController.java          # 设备页面
 │   │   ├── MonitorController.java         # 检测按钮/检测全部
 │   │   ├── AlertController.java           # 告警中心页面
+│   │   ├── DashboardController.java       # 数据看板页面
 │   │   └── api/
 │   │       ├── DeviceApiController.java   # 设备 REST API
 │   │       ├── MonitorApiController.java  # 检测/历史 REST API
 │   │       ├── AlertApiController.java    # 告警 REST API
+│   │       ├── DashboardApiController.java# 看板 REST API
 │   │       └── ApiExceptionHandler.java
 │   ├── dto/
 │   │   ├── MonitorRecordResponse.java
 │   │   ├── CheckAllResponse.java
-│   │   └── AlertResponse.java
+│   │   ├── AlertResponse.java
+│   │   ├── DashboardSummaryResponse.java
+│   │   ├── ResponseTimeTrendResponse.java
+│   │   └── AlertDistributionResponse.java
 │   ├── entity/
 │   │   ├── NetworkDevice.java
 │   │   ├── MonitorRecord.java
@@ -243,21 +273,26 @@ network-monitor-system/
 │   │   └── PingResult.java
 │   ├── repository/
 │   │   ├── MonitorRecordRepository.java
-│   │   └── AlertRecordRepository.java
+│   │   ├── AlertRecordRepository.java
+│   │   └── NetworkDeviceRepository.java
 │   ├── scheduler/
 │   │   └── MonitorScheduler.java          # 60 秒定时检测
 │   └── service/
 │       ├── MonitorService.java            # 检测 + 历史 + 触发告警
-│       └── AlertService.java              # 告警规则 + 去重 + 恢复
+│       ├── AlertService.java              # 告警规则 + 去重 + 恢复
+│       └── DashboardService.java          # 看板数据聚合
 ├── src/main/resources/
+│   ├── templates/dashboard.html           # 数据看板
 │   ├── templates/alerts/list.html         # 告警中心
 │   ├── templates/devices/list.html        # 状态/最近检测/响应时间
 │   ├── templates/devices/detail.html      # 最近检测 + 历史表
+│   ├── static/js/dashboard.js             # ECharts 初始化
+│   ├── static/vendor/echarts/             # 本地 ECharts 5.6.0
 │   └── application.properties            # monitor.* / alert.* 参数
 ├── sql/init.sql
 ├── sql/phase3-migration.sql
 ├── sql/phase4-migration.sql
-└── screenshots/16~18-phase4-*.png
+└── screenshots/16~20-phase4~5-*.png
 ```
 
 ## 8. 接口
@@ -271,6 +306,7 @@ network-monitor-system/
 | POST | `/devices/check-all` | 手动检测全部设备 |
 | GET | `/alerts` | 告警中心，支持状态/级别筛选 |
 | POST | `/alerts/{id}/acknowledge` | 确认告警 |
+| GET | `/dashboard` | 数据看板 |
 | POST | `/devices/save` | 保存设备 |
 | POST | `/devices/{id}/delete` | 删除设备 |
 | GET | `/api/health` | 健康检查 |
@@ -286,6 +322,9 @@ network-monitor-system/
 | GET | `/api/alerts` | 分页查询告警，支持 deviceId/status/level |
 | GET | `/api/alerts/{id}` | 查询单条告警 |
 | POST | `/api/alerts/{id}/acknowledge` | 确认告警 |
+| GET | `/api/dashboard/summary` | 看板汇总数据 |
+| GET | `/api/dashboard/response-time-trend` | 响应时间趋势，默认 24 小时 |
+| GET | `/api/dashboard/alert-distribution` | 告警状态/类型/级别分布 |
 
 监测记录示例：
 
@@ -330,7 +369,7 @@ network-monitor-system/
 | 阶段 2 | 设备管理、IP 校验、搜索分页 | 已完成 |
 | 阶段 3 | Ping 检测、响应时间、手动/定时监测、历史记录 | 已完成 |
 | 阶段 4 | 连续失败判断、延迟阈值、告警生成与恢复、告警去重 | 已完成 |
-| 阶段 5 | ECharts 数据看板和历史趋势 | 待开发 |
+| 阶段 5 | ECharts 数据看板和历史趋势 | 已完成 |
 | 阶段 6 | SNMP v2c 扩展 | 待开发 |
 | 阶段 7 | 系统测试、异常测试、性能测试和修复 | 待开发 |
 | 阶段 8 | 论文材料整理 | 待开发 |
@@ -352,4 +391,4 @@ network-monitor-system/
 - 已通过 SSH 认证，`main` 已推送并设置上游 `origin/main`。
 - 工作区干净。
 
-后续阶段 5 实现看板时，不要把 SNMP 社区字符串或数据库密码写入仓库。
+后续阶段 6 实现 SNMP 扩展时，不要把 SNMP 社区字符串或数据库密码写入仓库。
