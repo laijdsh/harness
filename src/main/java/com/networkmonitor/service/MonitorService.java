@@ -35,8 +35,8 @@ import java.util.List;
  *     <li>返回适合页面/API 展示的 DTO。</li>
  * </ol>
  *
- * <p>注意：本阶段只根据单次检测结果设置状态。连续失败阈值、告警和
- * 告警去重属于阶段 4 的 Alert 层。
+ * <p>阶段 4 在保存检测记录后调用 AlertService 进行异常判断，
+ * 但告警规则本身仍放在 AlertService 中，便于独立测试和维护。
  */
 @Service
 public class MonitorService {
@@ -48,15 +48,18 @@ public class MonitorService {
     private final NetworkDeviceRepository deviceRepository;
     private final MonitorRecordRepository recordRepository;
     private final PingMonitor pingMonitor;
+    private final AlertService alertService;
     private final int timeoutMs;
 
     public MonitorService(NetworkDeviceRepository deviceRepository,
                           MonitorRecordRepository recordRepository,
                           PingMonitor pingMonitor,
+                          AlertService alertService,
                           @Value("${monitor.timeout-ms:2000}") int timeoutMs) {
         this.deviceRepository = deviceRepository;
         this.recordRepository = recordRepository;
         this.pingMonitor = pingMonitor;
+        this.alertService = alertService;
         this.timeoutMs = timeoutMs;
     }
 
@@ -185,6 +188,9 @@ public class MonitorService {
         record.setStatus(pingResult.getStatus());
         record.setResultMessage(truncate(pingResult.getMessage(), 255));
         MonitorRecord saved = recordRepository.save(record);
+
+        // 阶段 4：保存监测记录后立即进行告警判断。
+        alertService.evaluate(device, saved);
 
         log.info("检测设备 [{}] {} -> {}，响应时间={}ms",
                 device.getName(), device.getIpAddress(), pingResult.getStatus(),

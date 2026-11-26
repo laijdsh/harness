@@ -1,7 +1,9 @@
 package com.networkmonitor.controller.api;
 
+import com.networkmonitor.exception.AlertNotFoundException;
 import com.networkmonitor.exception.DeviceNotFoundException;
 import com.networkmonitor.exception.DuplicateIpException;
+import com.networkmonitor.exception.InvalidAlertStateException;
 import com.networkmonitor.exception.MonitorRecordNotFoundException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -39,6 +41,16 @@ public class ApiExceptionHandler {
     @ExceptionHandler(MonitorRecordNotFoundException.class)
     public ResponseEntity<ProblemDetail> handleMonitorRecordNotFound(MonitorRecordNotFoundException ex) {
         return problem(HttpStatus.NOT_FOUND, "暂无监测记录", ex.getMessage());
+    }
+
+    @ExceptionHandler(AlertNotFoundException.class)
+    public ResponseEntity<ProblemDetail> handleAlertNotFound(AlertNotFoundException ex) {
+        return problem(HttpStatus.NOT_FOUND, "告警不存在", ex.getMessage());
+    }
+
+    @ExceptionHandler(InvalidAlertStateException.class)
+    public ResponseEntity<ProblemDetail> handleInvalidAlertState(InvalidAlertStateException ex) {
+        return problem(HttpStatus.CONFLICT, "告警状态不允许该操作", ex.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

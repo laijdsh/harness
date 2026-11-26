@@ -29,15 +29,15 @@
 
     <section class="hero">
         <div class="hero-copy">
-            <span class="eyebrow">PHASE 3 · NETWORK MONITORING</span>
-            <h2>让设备状态从“未知”变成可验证的在线或离线</h2>
+            <span class="eyebrow">PHASE 4 · ALERTING</span>
+            <h2>从“发现离线”继续走到“产生告警、抑制重复、记录恢复”</h2>
             <p>
-                当前阶段接入 Ping 检测，记录响应时间和检测历史，并支持手动检测、
-                检测全部和每 60 秒自动检测。告警判断将在下一阶段实现。
+                当前阶段实现连续失败离线告警、响应延迟告警、告警去重、
+                告警确认和恢复记录。下一阶段接入 ECharts 数据看板。
             </p>
             <div class="hero-actions">
                 <a class="button-primary" th:href="@{/devices}">进入设备管理</a>
-                <a class="button-ghost" th:href="@{/api/devices}" target="_blank" rel="noopener">查看设备 API</a>
+                <a class="button-ghost" th:href="@{/alerts}">查看告警中心</a>
             </div>
         </div>
         <div class="hero-meta">
@@ -67,8 +67,8 @@
 
         <article class="card">
             <span class="card-label">当前阶段</span>
-            <strong class="status up">PHASE 3</strong>
-            <p>Ping 检测 · 响应时间 · 定时任务</p>
+            <strong class="status up">PHASE 4</strong>
+            <p>离线告警 · 延迟告警 · 去重恢复</p>
         </article>
     </section>
 
@@ -76,7 +76,7 @@
         <div class="panel-head">
             <div>
                 <h3>接口与后续模块</h3>
-                <p>设备管理、Ping 检测和监测历史接口已可用，告警和看板为后续阶段占位。</p>
+                <p>设备管理、Ping 监测、告警中心和告警 API 已可用，看板为后续阶段占位。</p>
             </div>
             <button id="refresh-button" type="button">刷新状态</button>
         </div>
@@ -100,6 +100,18 @@
                 <small>设备分页查询与 CRUD</small>
             </a>
 
+            <a class="endpoint available" th:href="@{/alerts}">
+                <span class="method">PAGE</span>
+                <code>/alerts</code>
+                <small>告警中心</small>
+            </a>
+
+            <a class="endpoint available" th:href="@{/api/alerts}" target="_blank" rel="noopener">
+                <span class="method">GET</span>
+                <code>/api/alerts</code>
+                <small>告警分页查询</small>
+            </a>
+
             <a class="endpoint available" th:href="@{/api/devices/1/records}" target="_blank" rel="noopener">
                 <span class="method">GET</span>
                 <code>/api/devices/1/records</code>
@@ -116,15 +128,15 @@
     <section class="panel roadmap">
         <div class="panel-head">
             <div>
-                <h3>阶段 3 验收点</h3>
+                <h3>阶段 4 验收点</h3>
                 <p>这些内容会在本阶段逐项实际运行验证。</p>
             </div>
         </div>
         <ul class="check-list">
-            <li>Ping 能识别本机回环在线</li>
-            <li>不可达 IP 能记录为离线</li>
-            <li>响应时间和监测历史写入数据库</li>
-            <li>手动检测、检测全部和定时任务可用</li>
+            <li>连续失败达到阈值触发离线告警</li>
+            <li>响应时间超过阈值触发延迟告警</li>
+            <li>持续异常只增加次数，不重复插入</li>
+            <li>告警确认和恢复状态可查询</li>
         </ul>
     </section>
 
@@ -132,7 +144,7 @@
 
 <footer class="footer">
     <span>轻量级网络设备状态监测与异常告警系统</span>
-    <span>本科毕业设计 · 阶段 3</span>
+    <span>本科毕业设计 · 阶段 4</span>
 </footer>
 
 <script th:src="@{/js/app.js}"></script>

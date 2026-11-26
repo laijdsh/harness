@@ -1,7 +1,7 @@
 # 轻量级网络设备状态监测与异常告警系统
 
 > 本科毕业设计项目  
-> 当前进度：**阶段 3（网络状态监测）已完成**
+> 当前进度：**阶段 4（异常检测与告警）已完成**
 
 ## 1. 项目简介
 
@@ -44,17 +44,36 @@
 - 设备详情显示最近一次结果和最近 10 条历史
 - 监测历史 REST API
 
+### 阶段 4：异常检测与告警
+
+- `alert_record` 告警记录表
+- 连续 3 次 `OFFLINE` 触发 `CRITICAL` 离线告警
+- 在线设备响应时间超过 100ms 触发 `WARNING` 延迟告警
+- 同一设备同一类型只保留一个活动告警
+- 持续异常只更新 `last_seen_at` 和 `occurrence_count`
+- 告警确认：`OPEN` → `ACKNOWLEDGED`
+- 告警恢复：`OPEN/ACKNOWLEDGED` → `RECOVERED`
+- 告警中心页面，支持状态/级别筛选
+- 告警 REST API 和确认接口
+- 监测检测完成后自动执行告警判断
+
 当前阶段实际验证结果：
 
-- Maven 构建：`BUILD SUCCESS`，36 个源文件
-- 单体在线检测：`127.0.0.1` 返回 `ONLINE`，响应时间 `<1 ms`
-- 离线检测：`192.0.2.1` 返回 `OFFLINE`，原因为请求超时
-- 检测全部：4 台演示设备，在线 3 台、离线 1 台、异常 0 台
-- 响应时间实际写入：1ms、2ms、0ms（表示小于 1ms）
-- 定时任务实际执行：日志出现 `MonitorScheduler`，记录数持续增加
-- 页面和 API 均能显示/查询监测历史
+- Maven 构建：`BUILD SUCCESS`，47 个源文件
+- 连续失败告警：第 1、2 次离线无告警；第 3 次生成 `CRITICAL` 告警
+- 重复抑制：第 4 次离线仍只有 1 条告警，`occurrence_count` 从 1 增至 2
+- 告警确认：接口和页面均能把状态改为 `ACKNOWLEDGED`
+- 离线恢复：设备 IP 改为可达地址后，告警变为 `RECOVERED`
+- 延迟告警：阈值临时设为 0ms 时，1ms/5ms 响应生成 `WARNING`
+- 延迟恢复：恢复默认 100ms 后，检测在线设备，延迟告警自动 `RECOVERED`
+- 删除设备：关联告警通过外键级联删除
+- 告警列表：共 3 条测试告警，筛选“已确认 + 严重”返回 1 条
+- 页面：告警列表、筛选、确认操作正常
+- 浏览器控制台：0 error / 0 warning
 
-![阶段 3 设备列表](screenshots/11-phase3-device-list.png)
+![阶段 4 告警列表](screenshots/16-phase4-alert-list.png)
+
+![阶段 4 告警筛选](screenshots/17-phase4-alert-filtered.png)
 
 ## 3. 技术栈
 
@@ -146,6 +165,8 @@ Stop-Process -Id $pid8080
 | `monitor.interval-ms` | `60000` | 定时检测间隔（60 秒） |
 | `monitor.initial-delay-ms` | `15000` | 启动后延迟 15 秒开始第一次自动检测 |
 | `monitor.scheduler.enabled` | `true` | 是否启用定时检测 |
+| `alert.consecutive-failure-threshold` | `3` | 连续离线多少次触发离线告警 |
+| `alert.response-time-threshold-ms` | `100` | 响应时间超过多少毫秒触发延迟告警 |
 
 如果只想手动检测，可启动时关闭定时任务：
 
@@ -160,7 +181,16 @@ java -jar target/network-monitor-system.jar --monitor.scheduler.enabled=false
 - `ERROR`：Ping 命令无法执行、本机网络接口发送失败、目标主机无法解析等程序/本机异常。
 
 `OFFLINE` 不等于“设备一定损坏”：防火墙可能屏蔽 ICMP，网络路径也可能临时不通。
-连续失败次数、离线告警和告警去重将在阶段 4 实现。
+因此离线告警采用“连续失败次数”规则，避免一次偶发超时就立即告警。
+
+### 告警规则说明
+
+- 离线告警：连续 `alert.consecutive-failure-threshold` 次 OFFLINE 后生成 CRITICAL。
+- 延迟告警：ONLINE 且响应时间大于 `alert.response-time-threshold-ms` 时生成 WARNING。
+- 同一设备、同一类型在未恢复期间只保留一个活动告警。
+- 持续异常会增加 `occurrence_count`，不会无限重复插入。
+- 设备恢复在线或响应时间恢复正常后，告警状态改为 RECOVERED。
+- 管理员可以确认告警；确认状态为 ACKNOWLEDGED，恢复后仍会变成 RECOVERED。
 
 ## 6. 数据库配置
 
@@ -169,6 +199,7 @@ java -jar target/network-monitor-system.jar --monitor.scheduler.enabled=false
 - 应用密码：通过环境变量 `DB_PASSWORD` 注入，不写入仓库
 - 初始化脚本：`sql/init.sql`
 - 阶段 2→3 迁移脚本：`sql/phase3-migration.sql`
+- 阶段 3→4 迁移脚本：`sql/phase4-migration.sql`
 - MySQL 服务名：`MySQL84`
 - 监听地址：`127.0.0.1:3306`（仅本机）
 - 字符集：`utf8mb4`
@@ -178,10 +209,11 @@ java -jar target/network-monitor-system.jar --monitor.scheduler.enabled=false
 
 - `network_device`：设备基础资料 + 最近一次监测摘要
 - `monitor_record`：每次 Ping 检测的历史记录
+- `alert_record`：离线/延迟告警、确认和恢复记录
 
 详细字段、索引和约束见 [docs/数据库设计.md](docs/数据库设计.md)。
 
-## 7. 目录结构（阶段 3 关键文件）
+## 7. 目录结构（阶段 4 关键文件）
 
 ```text
 network-monitor-system/
@@ -189,32 +221,43 @@ network-monitor-system/
 │   ├── controller/
 │   │   ├── DeviceController.java          # 设备页面
 │   │   ├── MonitorController.java         # 检测按钮/检测全部
+│   │   ├── AlertController.java           # 告警中心页面
 │   │   └── api/
 │   │       ├── DeviceApiController.java   # 设备 REST API
 │   │       ├── MonitorApiController.java  # 检测/历史 REST API
+│   │       ├── AlertApiController.java    # 告警 REST API
 │   │       └── ApiExceptionHandler.java
 │   ├── dto/
 │   │   ├── MonitorRecordResponse.java
-│   │   └── CheckAllResponse.java
+│   │   ├── CheckAllResponse.java
+│   │   └── AlertResponse.java
 │   ├── entity/
 │   │   ├── NetworkDevice.java
-│   │   └── MonitorRecord.java
+│   │   ├── MonitorRecord.java
+│   │   ├── AlertRecord.java
+│   │   ├── AlertType.java
+│   │   ├── AlertLevel.java
+│   │   └── AlertStatus.java
 │   ├── monitor/
 │   │   ├── PingMonitor.java               # 调用 ping.exe 并解析
 │   │   └── PingResult.java
 │   ├── repository/
-│   │   └── MonitorRecordRepository.java
+│   │   ├── MonitorRecordRepository.java
+│   │   └── AlertRecordRepository.java
 │   ├── scheduler/
 │   │   └── MonitorScheduler.java          # 60 秒定时检测
 │   └── service/
-│       └── MonitorService.java            # 检测 + 保存历史 + 更新摘要
+│       ├── MonitorService.java            # 检测 + 历史 + 触发告警
+│       └── AlertService.java              # 告警规则 + 去重 + 恢复
 ├── src/main/resources/
+│   ├── templates/alerts/list.html         # 告警中心
 │   ├── templates/devices/list.html        # 状态/最近检测/响应时间
 │   ├── templates/devices/detail.html      # 最近检测 + 历史表
-│   └── application.properties            # monitor.* 参数
+│   └── application.properties            # monitor.* / alert.* 参数
 ├── sql/init.sql
 ├── sql/phase3-migration.sql
-└── screenshots/11~15-phase3-*.png
+├── sql/phase4-migration.sql
+└── screenshots/16~18-phase4-*.png
 ```
 
 ## 8. 接口
@@ -226,6 +269,8 @@ network-monitor-system/
 | GET | `/devices/{id}` | 设备详情和监测历史 |
 | POST | `/devices/{id}/check` | 手动检测单台设备 |
 | POST | `/devices/check-all` | 手动检测全部设备 |
+| GET | `/alerts` | 告警中心，支持状态/级别筛选 |
+| POST | `/alerts/{id}/acknowledge` | 确认告警 |
 | POST | `/devices/save` | 保存设备 |
 | POST | `/devices/{id}/delete` | 删除设备 |
 | GET | `/api/health` | 健康检查 |
@@ -238,6 +283,9 @@ network-monitor-system/
 | POST | `/api/devices/check-all` | 检测全部设备 |
 | GET | `/api/devices/{id}/records` | 分页查询监测历史 |
 | GET | `/api/devices/{id}/records/latest` | 最近一条监测记录 |
+| GET | `/api/alerts` | 分页查询告警，支持 deviceId/status/level |
+| GET | `/api/alerts/{id}` | 查询单条告警 |
+| POST | `/api/alerts/{id}/acknowledge` | 确认告警 |
 
 监测记录示例：
 
@@ -281,7 +329,7 @@ network-monitor-system/
 | 阶段 1 | 基础框架与健康检查 | 已完成 |
 | 阶段 2 | 设备管理、IP 校验、搜索分页 | 已完成 |
 | 阶段 3 | Ping 检测、响应时间、手动/定时监测、历史记录 | 已完成 |
-| 阶段 4 | 连续失败判断、延迟阈值、告警生成与恢复、告警去重 | 待开发 |
+| 阶段 4 | 连续失败判断、延迟阈值、告警生成与恢复、告警去重 | 已完成 |
 | 阶段 5 | ECharts 数据看板和历史趋势 | 待开发 |
 | 阶段 6 | SNMP v2c 扩展 | 待开发 |
 | 阶段 7 | 系统测试、异常测试、性能测试和修复 | 待开发 |
@@ -302,4 +350,4 @@ network-monitor-system/
 - 已通过 SSH 认证，`main` 已推送并设置上游 `origin/main`。
 - 工作区干净。
 
-后续阶段 4 实现告警时，不要把 SNMP 社区字符串或数据库密码写入仓库。
+后续阶段 5 实现看板时，不要把 SNMP 社区字符串或数据库密码写入仓库。

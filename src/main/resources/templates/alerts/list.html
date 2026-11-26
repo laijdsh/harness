@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('告警管理')}"></head>
+<body>
+
+<nav th:replace="~{fragments/layout :: navbar('alerts')}"></nav>
+
+<main class="container py-4 py-lg-5">
+    <div class="page-header">
+        <div>
+            <span class="eyebrow">ALERT CENTER</span>
+            <h1>告警管理</h1>
+            <p>设备离线、响应延迟和恢复记录。告警持续时只增加次数，不重复插入。</p>
+        </div>
+        <a class="btn btn-outline-secondary" th:href="@{/devices}">返回设备管理</a>
+    </div>
+
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <span th:text="${successMessage}">操作成功</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="关闭"></button>
+    </div>
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span th:text="${errorMessage}">操作失败</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="关闭"></button>
+    </div>
+
+    <form class="search-card" method="get" th:action="@{/alerts}">
+        <div class="row g-3 align-items-end">
+            <div class="col-lg-3">
+                <label class="form-label" for="status">告警状态</label>
+                <select id="status" class="form-select" name="status">
+                    <option value="">全部状态</option>
+                    <option th:each="s : ${alertStatuses}"
+                            th:value="${s}"
+                            th:text="${s.displayName}"
+                            th:selected="${s == selectedStatus}">未恢复</option>
+                </select>
+            </div>
+            <div class="col-lg-3">
+                <label class="form-label" for="level">告警级别</label>
+                <select id="level" class="form-select" name="level">
+                    <option value="">全部级别</option>
+                    <option th:each="l : ${alertLevels}"
+                            th:value="${l}"
+                            th:text="${l.displayName}"
+                            th:selected="${l == selectedLevel}">严重</option>
+                </select>
+            </div>
+            <div class="col-lg-4 d-flex gap-2">
+                <button class="btn btn-primary" type="submit">筛选</button>
+                <a class="btn btn-outline-secondary" th:href="@{/alerts}">重置</a>
+            </div>
+        </div>
+    </form>
+
+    <div class="table-card">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0 alert-table">
+                <thead>
+                <tr>
+                    <th scope="col">触发时间</th>
+                    <th scope="col">设备</th>
+                    <th scope="col">类型</th>
+                    <th scope="col">级别</th>
+                    <th scope="col">告警内容</th>
+                    <th scope="col">状态</th>
+                    <th scope="col">次数</th>
+                    <th scope="col">恢复时间</th>
+                    <th scope="col" class="text-end">操作</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="alert : ${alerts.content}">
+                    <td class="text-nowrap" th:text="${alert.triggeredAtText}">2026-11-26 18:00:00</td>
+                    <td>
+                        <a class="device-name" th:href="@{/devices/{id}(id=${alert.deviceId})}"
+                           th:text="${alert.deviceName}">核心交换机</a>
+                    </td>
+                    <td class="text-nowrap" th:text="${alert.alertType.displayName}">设备离线</td>
+                    <td>
+                        <span class="badge" th:classappend="${alert.alertLevel.cssClass}"
+                              th:text="${alert.alertLevel.displayName}">严重</span>
+                    </td>
+                    <td class="alert-message" th:text="${alert.message}">设备连续 3 次 Ping 失败</td>
+                    <td>
+                        <span class="badge" th:classappend="${alert.status.cssClass}"
+                              th:text="${alert.status.displayName}">未恢复</span>
+                    </td>
+                    <td th:text="${alert.occurrenceCount}">1</td>
+                    <td class="text-nowrap" th:text="${alert.recoveredAtText}">—</td>
+                    <td class="text-end text-nowrap">
+                        <form th:if="${alert.acknowledgeable}" class="d-inline" method="post"
+                              th:action="@{/alerts/{id}/acknowledge(id=${alert.id})}">
+                            <button class="btn btn-sm btn-outline-warning" type="submit">确认</button>
+                        </form>
+                        <span th:unless="${alert.acknowledgeable}" class="text-muted small">—</span>
+                    </td>
+                </tr>
+                <tr th:if="${alerts.empty}">
+                    <td colspan="9">
+                        <div class="empty-state">
+                            <div class="empty-icon" aria-hidden="true">✓</div>
+                            <h3>暂无符合条件的告警</h3>
+                            <p>离线或响应延迟达到规则后会显示在这里。</p>
+                            <a class="btn btn-primary" th:href="@{/devices}">查看设备</a>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer" th:if="${alerts.totalElements > 0}">
+            <span>
+                共 <strong th:text="${alerts.totalElements}">0</strong> 条告警，
+                第 <strong th:text="${alerts.number + 1}">1</strong> /
+                <strong th:text="${alerts.totalPages}">1</strong> 页
+            </span>
+            <nav th:if="${alerts.totalPages > 1}" aria-label="告警分页">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item" th:classappend="${alerts.first} ? 'disabled' : ''">
+                        <a class="page-link"
+                           th:href="@{/alerts(page=${alerts.number - 1}, status=${selectedStatus}, level=${selectedLevel})}">上一页</a>
+                    </li>
+                    <li class="page-item" th:each="i : ${#numbers.sequence(0, alerts.totalPages - 1)}"
+                        th:classappend="${i == alerts.number} ? 'active' : ''">
+                        <a class="page-link"
+                           th:href="@{/alerts(page=${i}, status=${selectedStatus}, level=${selectedLevel})}"
+                           th:text="${i + 1}">1</a>
+                    </li>
+                    <li class="page-item" th:classappend="${alerts.last} ? 'disabled' : ''">
+                        <a class="page-link"
+                           th:href="@{/alerts(page=${alerts.number + 1}, status=${selectedStatus}, level=${selectedLevel})}">下一页</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

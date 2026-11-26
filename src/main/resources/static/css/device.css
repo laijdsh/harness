@@ -208,6 +208,27 @@ main {
     font-weight: 600;
 }
 
+.alert-table {
+    min-width: 1020px;
+}
+
+.alert-table .device-name,
+.alert-table td,
+.alert-table th {
+    white-space: nowrap;
+}
+
+.alert-table .alert-message {
+    min-width: 230px;
+    max-width: 320px;
+    white-space: normal;
+}
+
+.alert-message {
+    color: #334155;
+    font-size: 0.88rem;
+}
+
 .badge {
     font-weight: 700;
     letter-spacing: 0.02em;
