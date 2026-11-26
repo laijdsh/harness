@@ -522,6 +522,8 @@ SNMP 设备响应中包含 `snmpEnabled`、`snmpStatus`、`snmpSysName`、`snmpS
   - `1550501`：阶段 6 SNMP v2c、模拟 Agent、页面和文档
   - `6d019a6`：阶段 7 自动化测试、移动端修复和文档
   - `9c4fdf2`：阶段 8 论文初稿、图表和答辩材料
+  - `9ab5e6f`：阶段 8 按武汉学院模板重构版式
+  - `6099e3c`：忽略 Python 脚本缓存
 - 远程仓库：
   - <https://github.com/laijdsh/harness>
   - SSH 地址：`git@github.com:laijdsh/harness.git`
