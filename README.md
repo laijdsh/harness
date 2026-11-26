@@ -287,8 +287,28 @@ network-monitor-system/
 | 阶段 7 | 系统测试、异常测试、性能测试和修复 | 待开发 |
 | 阶段 8 | 论文材料整理 | 待开发 |
 
-## 12. 待办提醒
+## 12. Git 状态与远程备份
 
-- 注册 Git 账号（GitHub/Gitee 均可），配置 `user.name` 和 `user.email`。
-- 完成首次 Git 提交，避免所有阶段文件一直停留在暂存状态。
-- 后续阶段 4 实现告警时，不要把 SNMP 社区字符串或数据库密码写入仓库。
+- 本地 Git 仓库已初始化，分支 `main`。
+- 全局身份已配置：
+  - `user.name = laijdsh`
+  - `user.email = 1327933420@qq.com`
+- 首次提交已完成：
+  - commit：`b9f6959`
+  - 说明：`阶段1-3：完成设备管理、Ping监测和历史记录`
+  - 内容：78 个文件，5993 行新增
+  - 工作区当前干净
+- 远程仓库尚未创建和推送。
+
+下一步建议：
+
+1. 注册 GitHub 或 Gitee 账号（国内网络建议 Gitee）。
+2. 创建一个空仓库，不要勾选自动生成 README。
+3. 把仓库地址发给开发助手，执行：
+   ```powershell
+   git remote add origin <仓库地址>
+   git branch -M main
+   git push -u origin main
+   ```
+
+后续阶段 4 实现告警时，不要把 SNMP 社区字符串或数据库密码写入仓库。
