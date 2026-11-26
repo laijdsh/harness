@@ -1,14 +1,18 @@
 package com.networkmonitor.service;
 
 import com.networkmonitor.dto.CheckAllResponse;
+import com.networkmonitor.dto.DeviceResponse;
 import com.networkmonitor.dto.MonitorRecordResponse;
 import com.networkmonitor.entity.DeviceStatus;
 import com.networkmonitor.entity.MonitorRecord;
 import com.networkmonitor.entity.NetworkDevice;
+import com.networkmonitor.entity.SnmpStatus;
 import com.networkmonitor.exception.DeviceNotFoundException;
 import com.networkmonitor.exception.MonitorRecordNotFoundException;
 import com.networkmonitor.monitor.PingMonitor;
 import com.networkmonitor.monitor.PingResult;
+import com.networkmonitor.monitor.SnmpResult;
+import com.networkmonitor.monitor.SnmpService;
 import com.networkmonitor.repository.MonitorRecordRepository;
 import com.networkmonitor.repository.NetworkDeviceRepository;
 import org.slf4j.Logger;
@@ -49,17 +53,20 @@ public class MonitorService {
     private final MonitorRecordRepository recordRepository;
     private final PingMonitor pingMonitor;
     private final AlertService alertService;
+    private final SnmpService snmpService;
     private final int timeoutMs;
 
     public MonitorService(NetworkDeviceRepository deviceRepository,
                           MonitorRecordRepository recordRepository,
                           PingMonitor pingMonitor,
                           AlertService alertService,
+                          SnmpService snmpService,
                           @Value("${monitor.timeout-ms:2000}") int timeoutMs) {
         this.deviceRepository = deviceRepository;
         this.recordRepository = recordRepository;
         this.pingMonitor = pingMonitor;
         this.alertService = alertService;
+        this.snmpService = snmpService;
         this.timeoutMs = timeoutMs;
     }
 
@@ -110,6 +117,16 @@ public class MonitorService {
         log.info("全部设备检测完成：总数={}，在线={}，离线={}，异常={}",
                 summary.getTotal(), summary.getOnline(), summary.getOffline(), summary.getError());
         return summary;
+    }
+
+    /**
+     * 单独执行一次 SNMP 采集，供设备详情页和 API 测试使用。
+     */
+    @Transactional
+    public DeviceResponse checkSnmp(Long deviceId) {
+        NetworkDevice device = getDevice(deviceId);
+        refreshSnmp(device);
+        return DeviceResponse.from(device);
     }
 
     /**
@@ -192,11 +209,33 @@ public class MonitorService {
         // 阶段 4：保存监测记录后立即进行告警判断。
         alertService.evaluate(device, saved);
 
+        // 阶段 6：启用 SNMP 的设备在每次 Ping 检测后同步更新 SNMP 信息。
+        if (device.isSnmpEnabled()) {
+            refreshSnmp(device);
+        }
+
         log.info("检测设备 [{}] {} -> {}，响应时间={}ms",
                 device.getName(), device.getIpAddress(), pingResult.getStatus(),
                 pingResult.getResponseTimeMs());
 
         return MonitorRecordResponse.from(saved, device.getName());
+    }
+
+    private void refreshSnmp(NetworkDevice device) {
+        SnmpResult result = snmpService.poll(device);
+        device.setSnmpStatus(result.getStatus());
+        device.setSnmpLastCheckedAt(result.getCheckedAt());
+        device.setSnmpMessage(truncate(result.getMessage(), 255));
+
+        if (result.getStatus() == SnmpStatus.OK) {
+            device.setSnmpSysName(truncate(result.getSysName(), 255));
+            device.setSnmpSysDescr(truncate(result.getSysDescr(), 500));
+            device.setSnmpSysUptimeTicks(result.getSysUptimeTicks());
+        }
+
+        deviceRepository.save(device);
+        log.info("SNMP 采集设备 [{}] {} -> {}",
+                device.getName(), device.getIpAddress(), result.getStatus());
     }
 
     private NetworkDevice getDevice(Long deviceId) {

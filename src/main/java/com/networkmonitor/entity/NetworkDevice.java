@@ -61,6 +61,37 @@ public class NetworkDevice {
     @Column(name = "last_response_time_ms")
     private Integer lastResponseTimeMs;
 
+    @Column(name = "snmp_enabled", nullable = false)
+    private boolean snmpEnabled;
+
+    @Column(name = "snmp_version", nullable = false, length = 10)
+    private String snmpVersion = "2c";
+
+    @Column(name = "snmp_port", nullable = false)
+    private int snmpPort = 161;
+
+    @Column(name = "snmp_community", length = 100)
+    private String snmpCommunity;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "snmp_status", nullable = false, length = 20)
+    private SnmpStatus snmpStatus = SnmpStatus.DISABLED;
+
+    @Column(name = "snmp_sys_name", length = 255)
+    private String snmpSysName;
+
+    @Column(name = "snmp_sys_descr", length = 500)
+    private String snmpSysDescr;
+
+    @Column(name = "snmp_sys_uptime_ticks")
+    private Long snmpSysUptimeTicks;
+
+    @Column(name = "snmp_last_checked_at")
+    private LocalDateTime snmpLastCheckedAt;
+
+    @Column(name = "snmp_message", length = 255)
+    private String snmpMessage;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -79,6 +110,15 @@ public class NetworkDevice {
         updatedAt = now;
         if (status == null) {
             status = DeviceStatus.UNKNOWN;
+        }
+        if (snmpVersion == null || snmpVersion.isBlank()) {
+            snmpVersion = "2c";
+        }
+        if (snmpPort <= 0) {
+            snmpPort = 161;
+        }
+        if (snmpStatus == null) {
+            snmpStatus = SnmpStatus.DISABLED;
         }
     }
 
@@ -160,6 +200,89 @@ public class NetworkDevice {
 
     public void setLastResponseTimeMs(Integer lastResponseTimeMs) {
         this.lastResponseTimeMs = lastResponseTimeMs;
+    }
+
+    public boolean isSnmpEnabled() {
+        return snmpEnabled;
+    }
+
+    public void setSnmpEnabled(boolean snmpEnabled) {
+        this.snmpEnabled = snmpEnabled;
+    }
+
+    public String getSnmpVersion() {
+        return snmpVersion;
+    }
+
+    public void setSnmpVersion(String snmpVersion) {
+        this.snmpVersion = snmpVersion;
+    }
+
+    public int getSnmpPort() {
+        return snmpPort;
+    }
+
+    public void setSnmpPort(int snmpPort) {
+        this.snmpPort = snmpPort;
+    }
+
+    /**
+     * 社区字符串只供 SNMP 采集服务使用，不能返回给前端或 API。
+     */
+    public String getSnmpCommunity() {
+        return snmpCommunity;
+    }
+
+    public void setSnmpCommunity(String snmpCommunity) {
+        this.snmpCommunity = snmpCommunity;
+    }
+
+    public SnmpStatus getSnmpStatus() {
+        return snmpStatus;
+    }
+
+    public void setSnmpStatus(SnmpStatus snmpStatus) {
+        this.snmpStatus = snmpStatus;
+    }
+
+    public String getSnmpSysName() {
+        return snmpSysName;
+    }
+
+    public void setSnmpSysName(String snmpSysName) {
+        this.snmpSysName = snmpSysName;
+    }
+
+    public String getSnmpSysDescr() {
+        return snmpSysDescr;
+    }
+
+    public void setSnmpSysDescr(String snmpSysDescr) {
+        this.snmpSysDescr = snmpSysDescr;
+    }
+
+    public Long getSnmpSysUptimeTicks() {
+        return snmpSysUptimeTicks;
+    }
+
+    public void setSnmpSysUptimeTicks(Long snmpSysUptimeTicks) {
+        this.snmpSysUptimeTicks = snmpSysUptimeTicks;
+    }
+
+    public LocalDateTime getSnmpLastCheckedAt() {
+        return snmpLastCheckedAt;
+    }
+
+    public void setSnmpLastCheckedAt(LocalDateTime snmpLastCheckedAt) {
+        this.snmpLastCheckedAt = snmpLastCheckedAt;
+    }
+
+    public String getSnmpMessage() {
+        return snmpMessage;
+    }
+
+    public void setSnmpMessage(String snmpMessage) {
+        this.snmpMessage = snmpMessage;
     }
 
     public LocalDateTime getCreatedAt() {

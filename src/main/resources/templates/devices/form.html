@@ -10,7 +10,7 @@
         <div>
             <span class="eyebrow">DEVICE FORM</span>
             <h1 th:text="${formTitle}">添加设备</h1>
-            <p>填写设备基础信息。IP 地址必须唯一，当前阶段只支持 IPv4。</p>
+            <p>填写设备基础信息。IP 地址必须唯一，当前阶段只支持 IPv4；SNMP v2c 为可选扩展。</p>
         </div>
         <a class="btn btn-outline-secondary" th:href="@{/devices}">返回列表</a>
     </div>
@@ -76,6 +76,40 @@
                               placeholder="例如：核心机房机柜 03，负责办公网汇聚"></textarea>
                     <div class="invalid-feedback" th:if="${#fields.hasErrors('description')}"
                          th:errors="*{description}">备注错误</div>
+                </div>
+
+                <div class="col-12">
+                    <hr class="my-1">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch"
+                               id="snmpEnabled" th:field="*{snmpEnabled}">
+                        <label class="form-check-label" for="snmpEnabled">启用 SNMP v2c 采集</label>
+                    </div>
+                    <div class="form-text">
+                        启用后可读取设备 sysName、sysDescr 和 sysUpTime；阶段 6 使用本机模拟 Agent 验证。
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label" for="snmpPort">SNMP 端口</label>
+                    <input id="snmpPort" class="form-control" type="number" min="1" max="65535"
+                           th:classappend="${#fields.hasErrors('snmpPort')} ? 'is-invalid' : ''"
+                           th:field="*{snmpPort}" placeholder="161">
+                    <div class="invalid-feedback" th:if="${#fields.hasErrors('snmpPort')}"
+                         th:errors="*{snmpPort}">端口错误</div>
+                </div>
+
+                <div class="col-md-8">
+                    <label class="form-label" for="snmpCommunity">SNMP 社区字符串</label>
+                    <input id="snmpCommunity" class="form-control" type="password"
+                           th:classappend="${#fields.hasErrors('snmpCommunity')} ? 'is-invalid' : ''"
+                           th:field="*{snmpCommunity}" autocomplete="new-password"
+                           placeholder="留空表示不修改已有社区字符串">
+                    <div class="form-text">
+                        社区字符串只保存到数据库，不通过 API 返回，也不会显示在页面上。
+                    </div>
+                    <div class="invalid-feedback" th:if="${#fields.hasErrors('snmpCommunity')}"
+                         th:errors="*{snmpCommunity}">社区字符串错误</div>
                 </div>
             </div>
 

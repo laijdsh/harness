@@ -1,6 +1,7 @@
 package com.networkmonitor.controller;
 
 import com.networkmonitor.dto.CheckAllResponse;
+import com.networkmonitor.dto.DeviceResponse;
 import com.networkmonitor.dto.MonitorRecordResponse;
 import com.networkmonitor.exception.DeviceNotFoundException;
 import com.networkmonitor.service.MonitorService;
@@ -46,6 +47,24 @@ public class MonitorController {
             return "redirect:/devices/" + id;
         }
         return "redirect:/devices";
+    }
+
+    @PostMapping("/{id}/snmp-check")
+    public String checkSnmp(@PathVariable Long id,
+                            RedirectAttributes redirectAttributes) {
+        try {
+            DeviceResponse result = monitorService.checkSnmp(id);
+            redirectAttributes.addFlashAttribute(
+                    "successMessage",
+                    "SNMP 采集完成：" + result.getSnmpStatusText()
+                            + (result.getSnmpSysName() == null ? "" : "，sysName=" + result.getSnmpSysName())
+            );
+        } catch (DeviceNotFoundException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        } catch (RuntimeException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", "SNMP 采集失败：" + ex.getMessage());
+        }
+        return "redirect:/devices/" + id;
     }
 
     @PostMapping("/check-all")

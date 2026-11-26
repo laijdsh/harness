@@ -130,6 +130,60 @@
         </div>
     </section>
 
+    <section class="monitor-card">
+        <div class="section-heading">
+            <div>
+                <span class="eyebrow">SNMP V2C</span>
+                <h2>SNMP 采集</h2>
+                <p>读取设备系统信息。社区字符串不会显示在页面上。</p>
+            </div>
+            <form th:if="${device.snmpEnabled}" method="post"
+                  th:action="@{/devices/{id}/snmp-check(id=${device.id})}">
+                <button class="btn btn-outline-primary" type="submit">SNMP 采集</button>
+            </form>
+        </div>
+
+        <div class="latest-record">
+            <div class="latest-main">
+                <span class="detail-label">采集状态</span>
+                <span class="badge" th:classappend="${device.snmpStatusCssClass}"
+                      th:text="${device.snmpStatusText}">未检测</span>
+                <span class="latest-time" th:text="${device.snmpLastCheckedAtText}">—</span>
+            </div>
+            <div class="latest-meta">
+                <span>版本：<strong th:text="${device.snmpVersion}">2c</strong></span>
+                <span>端口：<strong th:text="${device.snmpPort}">161</strong></span>
+                <span>社区字符串：
+                    <strong th:text="${device.snmpCommunityConfigured ? '已配置' : '未配置'}">未配置</strong>
+                </span>
+            </div>
+        </div>
+
+        <div th:unless="${device.snmpEnabled}" class="empty-monitor">
+            <div class="empty-icon" aria-hidden="true">SN</div>
+            <h3>SNMP 未启用</h3>
+            <p>在编辑设备中启用 SNMP v2c 并填写端口和社区字符串后，可读取系统信息。</p>
+            <a class="btn btn-primary" th:href="@{/devices/{id}/edit(id=${device.id})}">编辑设备</a>
+        </div>
+
+        <dl th:if="${device.snmpEnabled}" class="row detail-list mb-0">
+            <dt class="col-sm-3">sysName</dt>
+            <dd class="col-sm-9" th:text="${#strings.isEmpty(device.snmpSysName) ? '—' : device.snmpSysName}">—</dd>
+
+            <dt class="col-sm-3">sysDescr</dt>
+            <dd class="col-sm-9" th:text="${#strings.isEmpty(device.snmpSysDescr) ? '—' : device.snmpSysDescr}">—</dd>
+
+            <dt class="col-sm-3">sysUpTime</dt>
+            <dd class="col-sm-9" th:text="${device.snmpUptimeText}">—</dd>
+
+            <dt class="col-sm-3">最近采集</dt>
+            <dd class="col-sm-9" th:text="${device.snmpLastCheckedAtText}">—</dd>
+
+            <dt class="col-sm-3">采集说明</dt>
+            <dd class="col-sm-9" th:text="${#strings.isEmpty(device.snmpMessage) ? '—' : device.snmpMessage}">—</dd>
+        </dl>
+    </section>
+
     <div class="danger-zone">
         <div>
             <strong>删除设备</strong>

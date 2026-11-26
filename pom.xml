@@ -60,6 +60,13 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- SNMP v2c 管理器：阶段 6 读取设备系统信息 -->
+        <dependency>
+            <groupId>org.snmp4j</groupId>
+            <artifactId>snmp4j</artifactId>
+            <version>3.8.2</version>
+        </dependency>
+
         <!-- 测试依赖：JUnit 5、Mockito、AssertJ、Spring Test 等 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

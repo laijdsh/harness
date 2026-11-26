@@ -59,7 +59,9 @@ public class DeviceController {
 
     @GetMapping("/new")
     public String createForm(Model model) {
-        model.addAttribute("deviceRequest", new DeviceRequest());
+        DeviceRequest request = new DeviceRequest();
+        request.setSnmpPort(161);
+        model.addAttribute("deviceRequest", request);
         addFormOptions(model, false);
         return "devices/form";
     }
@@ -84,6 +86,9 @@ public class DeviceController {
         request.setDeviceType(device.getDeviceType());
         request.setArea(device.getArea());
         request.setDescription(device.getDescription());
+        request.setSnmpEnabled(device.isSnmpEnabled());
+        request.setSnmpPort(device.getSnmpPort());
+        // 社区字符串不回显；留空表示保留原值。
 
         model.addAttribute("deviceRequest", request);
         model.addAttribute("currentStatus", device.getStatus());
@@ -115,6 +120,11 @@ public class DeviceController {
             return "redirect:/devices";
         } catch (DuplicateIpException ex) {
             bindingResult.rejectValue("ipAddress", "duplicate", ex.getMessage());
+            addFormOptions(model, edit);
+            addCurrentStatus(model, request.getId());
+            return "devices/form";
+        } catch (IllegalArgumentException ex) {
+            bindingResult.rejectValue("snmpCommunity", "snmp", ex.getMessage());
             addFormOptions(model, edit);
             addCurrentStatus(model, request.getId());
             return "devices/form";

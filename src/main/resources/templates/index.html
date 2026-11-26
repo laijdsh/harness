@@ -29,16 +29,16 @@
 
     <section class="hero">
         <div class="hero-copy">
-            <span class="eyebrow">PHASE 5 · DASHBOARD</span>
-            <h2>把设备、监测历史和告警数据变成一眼可读的运行态势</h2>
+            <span class="eyebrow">PHASE 6 · SNMP V2C</span>
+            <h2>在 Ping 连通性之外，继续读取设备的系统信息</h2>
             <p>
-                当前阶段接入 ECharts 数据看板，展示设备在线情况、最近 24 小时
-                响应时间趋势、告警状态分布和最近告警。图表使用本地 ECharts 文件，
-                运行时不依赖 CDN。
+                当前阶段接入 SNMP v2c，读取 sysName、sysDescr 和 sysUpTime。
+                使用本机模拟 Agent 完成真实验证，社区字符串不通过 API 返回，
+                也不显示在页面上。
             </p>
             <div class="hero-actions">
-                <a class="button-primary" th:href="@{/dashboard}">进入数据看板</a>
-                <a class="button-ghost" th:href="@{/alerts}">查看告警中心</a>
+                <a class="button-primary" th:href="@{/devices}">进入设备管理</a>
+                <a class="button-ghost" th:href="@{/dashboard}">查看数据看板</a>
             </div>
         </div>
         <div class="hero-meta">
@@ -68,8 +68,8 @@
 
         <article class="card">
             <span class="card-label">当前阶段</span>
-            <strong class="status up">PHASE 5</strong>
-            <p>趋势图 · 状态分布 · 告警统计</p>
+            <strong class="status up">PHASE 6</strong>
+            <p>SNMP v2c · 系统信息 · 模拟 Agent</p>
         </article>
     </section>
 
@@ -77,7 +77,7 @@
         <div class="panel-head">
             <div>
                 <h3>接口与功能模块</h3>
-                <p>设备管理、Ping 监测、告警中心、数据看板和对应 API 均已可用。</p>
+                <p>设备管理、Ping 监测、告警中心、数据看板和 SNMP 采集均已可用。</p>
             </div>
             <button id="refresh-button" type="button">刷新状态</button>
         </div>
@@ -141,15 +141,15 @@
     <section class="panel roadmap">
         <div class="panel-head">
             <div>
-                <h3>阶段 5 验收点</h3>
+                <h3>阶段 6 验收点</h3>
                 <p>这些内容会在本阶段逐项实际运行验证。</p>
             </div>
         </div>
         <ul class="check-list">
-            <li>看板展示设备、在线、离线和告警汇总</li>
-            <li>最近 24 小时响应时间趋势来自真实记录</li>
-            <li>设备状态和告警状态分布图正常渲染</li>
-            <li>ECharts 文件本地加载，不依赖 CDN</li>
+            <li>设备可配置 SNMP v2c 端口和社区字符串</li>
+            <li>能读取 sysName、sysDescr 和 sysUpTime</li>
+            <li>错误社区字符串和关闭端口能正确提示</li>
+            <li>社区字符串不出现在 API 和页面中</li>
         </ul>
     </section>
 
@@ -157,7 +157,7 @@
 
 <footer class="footer">
     <span>轻量级网络设备状态监测与异常告警系统</span>
-    <span>本科毕业设计 · 阶段 5</span>
+    <span>本科毕业设计 · 阶段 6</span>
 </footer>
 
 <script th:src="@{/js/app.js}"></script>

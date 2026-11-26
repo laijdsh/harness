@@ -1,6 +1,7 @@
 package com.networkmonitor.controller.api;
 
 import com.networkmonitor.dto.CheckAllResponse;
+import com.networkmonitor.dto.DeviceResponse;
 import com.networkmonitor.dto.MonitorRecordResponse;
 import com.networkmonitor.dto.PageResponse;
 import com.networkmonitor.service.MonitorService;
@@ -40,6 +41,11 @@ public class MonitorApiController {
     @PostMapping("/check-all")
     public CheckAllResponse checkAll() {
         return monitorService.checkAll();
+    }
+
+    @PostMapping("/{id}/snmp-check")
+    public DeviceResponse checkSnmp(@PathVariable Long id) {
+        return monitorService.checkSnmp(id);
     }
 
     @GetMapping("/{id}/records")

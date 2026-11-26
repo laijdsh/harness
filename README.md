@@ -1,7 +1,7 @@
 # 轻量级网络设备状态监测与异常告警系统
 
 > 本科毕业设计项目  
-> 当前进度：**阶段 5（ECharts 数据看板）已完成**
+> 当前进度：**阶段 6（SNMP v2c 扩展）已完成**
 
 ## 1. 项目简介
 
@@ -99,6 +99,40 @@
 
 ![阶段 5 数据看板](screenshots/19-phase5-dashboard.png)
 
+### 阶段 6：SNMP v2c 扩展
+
+- `network_device` 增加 SNMP 配置和最近采集结果字段
+- 引入 `snmp4j 3.8.2`
+- 读取三个基础 OID：
+  - `sysDescr` 1.3.6.1.2.1.1.1.0
+  - `sysUpTime` 1.3.6.1.2.1.1.3.0
+  - `sysName` 1.3.6.1.2.1.1.5.0
+- 设备表单支持启用 SNMP、设置端口和社区字符串
+- 设备详情页显示 SNMP 状态、sysName、sysDescr、sysUpTime
+- 支持手动 SNMP 采集
+- Ping 检测后自动刷新启用 SNMP 的设备信息
+- 社区字符串只保存到数据库，不通过 API 返回、不显示在页面、不写入日志
+- 提供本机模拟 SNMP Agent，脚本只使用 Python 标准库
+
+当前阶段实际验证结果：
+
+- Maven 构建：`BUILD SUCCESS`，56 个源文件
+- 设备 3 配置为 `127.0.0.1:1161`，使用模拟 Agent
+- SNMP 采集成功：
+  - `sysName = simulated-core-switch`
+  - `sysDescr = Simulated SNMP v2c Agent for thesis testing`
+  - `sysUpTime = 123456 ticks`，页面显示 `00:20:34`
+  - `snmpStatus = OK`
+- API 响应不包含 `snmpCommunity` 字段
+- 应用日志不包含测试社区字符串
+- 错误社区字符串 → `UNREACHABLE`
+- 关闭的端口 1162 → `UNREACHABLE`
+- 编辑时留空社区字符串 → 保留原值，SNMP 仍采集成功
+- Ping 检测后 SNMP 采集时间自动更新
+- 浏览器控制台：0 error / 0 warning
+
+![阶段 6 设备 SNMP](screenshots/21-phase6-device-snmp.png)
+
 ## 3. 技术栈
 
 | 层次 | 技术 | 版本 |
@@ -114,6 +148,8 @@
 | 模板引擎 | Thymeleaf | 由 Spring Boot 管理 |
 | 前端框架 | Bootstrap | 5.3.9（本地静态文件） |
 | 图表库 | Apache ECharts | 5.6.0（本地静态文件） |
+| SNMP 管理器 | SNMP4J | 3.8.2 |
+| 模拟 SNMP Agent | Python 标准库 | 随项目提供脚本 |
 | 网络探测 | 操作系统 `ping.exe` | Windows 自带 |
 | 前端 | HTML5 / CSS3 / 原生 JavaScript | 不引入 Node.js |
 | IDE | VS Code + Java/Spring 扩展 | 1.97.2 |
@@ -192,6 +228,8 @@ Stop-Process -Id $pid8080
 | `monitor.scheduler.enabled` | `true` | 是否启用定时检测 |
 | `alert.consecutive-failure-threshold` | `3` | 连续离线多少次触发离线告警 |
 | `alert.response-time-threshold-ms` | `100` | 响应时间超过多少毫秒触发延迟告警 |
+| `snmp.timeout-ms` | `1500` | SNMP GET 超时时间（毫秒） |
+| `snmp.retries` | `1` | SNMP 超时重试次数 |
 
 如果只想手动检测，可启动时关闭定时任务：
 
@@ -217,6 +255,28 @@ java -jar target/network-monitor-system.jar --monitor.scheduler.enabled=false
 - 设备恢复在线或响应时间恢复正常后，告警状态改为 RECOVERED。
 - 管理员可以确认告警；确认状态为 ACKNOWLEDGED，恢复后仍会变成 RECOVERED。
 
+### SNMP v2c 说明
+
+- 仅支持 SNMP v2c。
+- 读取基础 OID：sysDescr、sysUpTime、sysName。
+- 设备启用 SNMP 后，Ping 检测完成时会同步刷新 SNMP 信息。
+- 设备详情页也可以单独点击“SNMP 采集”。
+- 社区字符串只保存在数据库中，**不通过 API 返回、不显示在页面、不写入日志**。
+- 超时或社区字符串错误会记录为 `UNREACHABLE`，不会中断 Ping 检测。
+
+### 本机模拟 SNMP Agent
+
+阶段 6 使用项目自带的 Python 模拟 Agent 验证，不依赖真实设备：
+
+```powershell
+python tools\snmp-agent\simulated_agent.py --host 127.0.0.1 --port 1161 --community sim-public
+```
+
+如果系统没有 Python，可使用 DSH 捆绑 Python，详见
+[tools/snmp-agent/README.md](tools/snmp-agent/README.md)。
+
+`sim-public` 只是本机测试用模拟社区字符串，不是真实设备密码。
+
 ## 6. 数据库配置
 
 - 数据库名：`network_monitor`
@@ -225,6 +285,7 @@ java -jar target/network-monitor-system.jar --monitor.scheduler.enabled=false
 - 初始化脚本：`sql/init.sql`
 - 阶段 2→3 迁移脚本：`sql/phase3-migration.sql`
 - 阶段 3→4 迁移脚本：`sql/phase4-migration.sql`
+- 阶段 5→6 迁移脚本：`sql/phase6-migration.sql`
 - MySQL 服务名：`MySQL84`
 - 监听地址：`127.0.0.1:3306`（仅本机）
 - 字符集：`utf8mb4`
@@ -232,13 +293,13 @@ java -jar target/network-monitor-system.jar --monitor.scheduler.enabled=false
 
 当前表：
 
-- `network_device`：设备基础资料 + 最近一次监测摘要
+- `network_device`：设备基础资料、最近一次监测摘要、SNMP 配置和最近采集结果
 - `monitor_record`：每次 Ping 检测的历史记录
 - `alert_record`：离线/延迟告警、确认和恢复记录
 
 详细字段、索引和约束见 [docs/数据库设计.md](docs/数据库设计.md)。
 
-## 7. 目录结构（阶段 5 关键文件）
+## 7. 目录结构（阶段 6 关键文件）
 
 ```text
 network-monitor-system/
@@ -267,10 +328,13 @@ network-monitor-system/
 │   │   ├── AlertRecord.java
 │   │   ├── AlertType.java
 │   │   ├── AlertLevel.java
-│   │   └── AlertStatus.java
+│   │   ├── AlertStatus.java
+│   │   └── SnmpStatus.java
 │   ├── monitor/
 │   │   ├── PingMonitor.java               # 调用 ping.exe 并解析
-│   │   └── PingResult.java
+│   │   ├── PingResult.java
+│   │   ├── SnmpService.java               # SNMP v2c GET
+│   │   └── SnmpResult.java
 │   ├── repository/
 │   │   ├── MonitorRecordRepository.java
 │   │   ├── AlertRecordRepository.java
@@ -289,10 +353,14 @@ network-monitor-system/
 │   ├── static/js/dashboard.js             # ECharts 初始化
 │   ├── static/vendor/echarts/             # 本地 ECharts 5.6.0
 │   └── application.properties            # monitor.* / alert.* 参数
+├── tools/snmp-agent/
+│   ├── simulated_agent.py                 # 本机模拟 SNMP v2c Agent
+│   └── README.md
 ├── sql/init.sql
 ├── sql/phase3-migration.sql
 ├── sql/phase4-migration.sql
-└── screenshots/16~20-phase4~5-*.png
+├── sql/phase6-migration.sql
+└── screenshots/16~24-phase4~6-*.png
 ```
 
 ## 8. 接口
@@ -304,6 +372,7 @@ network-monitor-system/
 | GET | `/devices/{id}` | 设备详情和监测历史 |
 | POST | `/devices/{id}/check` | 手动检测单台设备 |
 | POST | `/devices/check-all` | 手动检测全部设备 |
+| POST | `/devices/{id}/snmp-check` | 手动采集单台设备 SNMP 信息 |
 | GET | `/alerts` | 告警中心，支持状态/级别筛选 |
 | POST | `/alerts/{id}/acknowledge` | 确认告警 |
 | GET | `/dashboard` | 数据看板 |
@@ -317,6 +386,7 @@ network-monitor-system/
 | DELETE | `/api/devices/{id}` | 删除设备 |
 | POST | `/api/devices/{id}/check` | 检测单台设备 |
 | POST | `/api/devices/check-all` | 检测全部设备 |
+| POST | `/api/devices/{id}/snmp-check` | SNMP v2c 采集 |
 | GET | `/api/devices/{id}/records` | 分页查询监测历史 |
 | GET | `/api/devices/{id}/records/latest` | 最近一条监测记录 |
 | GET | `/api/alerts` | 分页查询告警，支持 deviceId/status/level |
@@ -340,6 +410,10 @@ network-monitor-system/
   "resultMessage": "收到 ICMP 回复，响应时间小于 1 ms"
 }
 ```
+
+SNMP 设备响应中包含 `snmpEnabled`、`snmpStatus`、`snmpSysName`、`snmpSysDescr`、
+`snmpSysUptimeTicks` 等字段，以及只表示是否已配置的 `snmpCommunityConfigured`。
+**不会返回社区字符串本身。**
 
 详细说明见 [docs/接口说明.md](docs/接口说明.md)。
 
@@ -370,7 +444,7 @@ network-monitor-system/
 | 阶段 3 | Ping 检测、响应时间、手动/定时监测、历史记录 | 已完成 |
 | 阶段 4 | 连续失败判断、延迟阈值、告警生成与恢复、告警去重 | 已完成 |
 | 阶段 5 | ECharts 数据看板和历史趋势 | 已完成 |
-| 阶段 6 | SNMP v2c 扩展 | 待开发 |
+| 阶段 6 | SNMP v2c 扩展 | 已完成 |
 | 阶段 7 | 系统测试、异常测试、性能测试和修复 | 待开发 |
 | 阶段 8 | 论文材料整理 | 待开发 |
 
@@ -392,4 +466,4 @@ network-monitor-system/
 - 已通过 SSH 认证，`main` 已推送并设置上游 `origin/main`。
 - 工作区干净。
 
-后续阶段 6 实现 SNMP 扩展时，不要把 SNMP 社区字符串或数据库密码写入仓库。
+后续阶段 7 进行系统测试时，不要把 SNMP 社区字符串或数据库密码写入仓库。

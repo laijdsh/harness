@@ -6,8 +6,9 @@
 -- 1. 本文件不包含任何密码。
 -- 2. 应用账号 netmon 已在开发环境中创建，密码保存在项目外的
 --    D:\dev\secrets\mysql-netmon.txt，禁止提交到 Git。
--- 3. 新环境可直接执行本文件；已有阶段 2 数据库请执行
---    sql/phase3-migration.sql。
+-- 3. 新环境可直接执行本文件；已有旧数据库请按阶段执行迁移：
+--    sql/phase3-migration.sql、sql/phase4-migration.sql、
+--    sql/phase6-migration.sql。
 -- ============================================================
 
 CREATE DATABASE IF NOT EXISTS network_monitor
@@ -32,6 +33,16 @@ CREATE TABLE IF NOT EXISTS network_device (
     status                VARCHAR(20)  NOT NULL DEFAULT 'UNKNOWN' COMMENT '状态：ONLINE/OFFLINE/UNKNOWN/ERROR',
     last_checked_at       DATETIME(6)  NULL COMMENT '最近一次检测时间',
     last_response_time_ms INT          NULL COMMENT '最近一次响应时间（毫秒）',
+    snmp_enabled          TINYINT(1)   NOT NULL DEFAULT 0 COMMENT '是否启用 SNMP：1 是，0 否',
+    snmp_version          VARCHAR(10)  NOT NULL DEFAULT '2c' COMMENT 'SNMP 版本，当前仅支持 2c',
+    snmp_port             INT          NOT NULL DEFAULT 161 COMMENT 'SNMP UDP 端口',
+    snmp_community        VARCHAR(100) NULL COMMENT 'SNMP 社区字符串，敏感字段，不通过 API 返回',
+    snmp_status           VARCHAR(20)  NOT NULL DEFAULT 'DISABLED' COMMENT 'SNMP 状态：DISABLED/OK/UNREACHABLE/ERROR',
+    snmp_sys_name         VARCHAR(255) NULL COMMENT 'SNMP sysName',
+    snmp_sys_descr        VARCHAR(500) NULL COMMENT 'SNMP sysDescr',
+    snmp_sys_uptime_ticks BIGINT       NULL COMMENT 'SNMP sysUpTime，单位 1/100 秒',
+    snmp_last_checked_at  DATETIME(6)  NULL COMMENT '最近一次 SNMP 采集时间',
+    snmp_message          VARCHAR(255) NULL COMMENT '最近一次 SNMP 采集说明',
     created_at            DATETIME(6)  NOT NULL COMMENT '创建时间',
     updated_at            DATETIME(6)  NOT NULL COMMENT '更新时间',
     PRIMARY KEY (id),
@@ -40,11 +51,16 @@ CREATE TABLE IF NOT EXISTS network_device (
     KEY idx_network_device_type (device_type),
     KEY idx_network_device_status (status),
     KEY idx_network_device_last_checked_at (last_checked_at),
+    KEY idx_network_device_snmp_status (snmp_status),
     KEY idx_network_device_created_at (created_at),
     CONSTRAINT chk_network_device_type
         CHECK (device_type IN ('ROUTER', 'SWITCH', 'SERVER', 'OTHER')),
     CONSTRAINT chk_network_device_status
-        CHECK (status IN ('ONLINE', 'OFFLINE', 'UNKNOWN', 'ERROR'))
+        CHECK (status IN ('ONLINE', 'OFFLINE', 'UNKNOWN', 'ERROR')),
+    CONSTRAINT chk_network_device_snmp_version
+        CHECK (snmp_version IN ('2c')),
+    CONSTRAINT chk_network_device_snmp_status
+        CHECK (snmp_status IN ('DISABLED', 'OK', 'UNREACHABLE', 'ERROR'))
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_0900_ai_ci

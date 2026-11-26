@@ -4,6 +4,7 @@ import com.networkmonitor.dto.DeviceRequest;
 import com.networkmonitor.entity.DeviceStatus;
 import com.networkmonitor.entity.DeviceType;
 import com.networkmonitor.entity.NetworkDevice;
+import com.networkmonitor.entity.SnmpStatus;
 import com.networkmonitor.exception.DeviceNotFoundException;
 import com.networkmonitor.exception.DuplicateIpException;
 import com.networkmonitor.repository.NetworkDeviceRepository;
@@ -107,6 +108,25 @@ public class DeviceService {
         device.setDeviceType(request.getDeviceType());
         device.setArea(normalize(request.getArea()));
         device.setDescription(normalize(request.getDescription()));
+
+        device.setSnmpEnabled(request.isSnmpEnabled());
+        device.setSnmpVersion("2c");
+        device.setSnmpPort(request.getSnmpPort() == null ? 161 : request.getSnmpPort());
+
+        String community = normalize(request.getSnmpCommunity());
+        if (community != null) {
+            device.setSnmpCommunity(community);
+        }
+
+        if (device.isSnmpEnabled()
+                && (device.getSnmpCommunity() == null || device.getSnmpCommunity().isBlank())) {
+            throw new IllegalArgumentException("启用 SNMP 时必须填写社区字符串");
+        }
+        if (!device.isSnmpEnabled()) {
+            device.setSnmpStatus(SnmpStatus.DISABLED);
+        } else if (device.getSnmpStatus() == null) {
+            device.setSnmpStatus(SnmpStatus.DISABLED);
+        }
     }
 
     /**

@@ -1,6 +1,8 @@
 package com.networkmonitor.dto;
 
 import com.networkmonitor.entity.DeviceType;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -42,6 +44,15 @@ public class DeviceRequest {
 
     @Size(max = 255, message = "备注不能超过 255 个字符")
     private String description;
+
+    private boolean snmpEnabled;
+
+    @Min(value = 1, message = "SNMP 端口必须在 1~65535 之间")
+    @Max(value = 65535, message = "SNMP 端口必须在 1~65535 之间")
+    private Integer snmpPort;
+
+    @Size(max = 100, message = "SNMP 社区字符串不能超过 100 个字符")
+    private String snmpCommunity;
 
     public Long getId() {
         return id;
@@ -90,4 +101,29 @@ public class DeviceRequest {
     public void setDescription(String description) {
         this.description = description;
     }
+
+    public boolean isSnmpEnabled() {
+        return snmpEnabled;
+    }
+
+    public void setSnmpEnabled(boolean snmpEnabled) {
+        this.snmpEnabled = snmpEnabled;
+    }
+
+    public Integer getSnmpPort() {
+        return snmpPort;
+    }
+
+    public void setSnmpPort(Integer snmpPort) {
+        this.snmpPort = snmpPort;
+    }
+
+    public String getSnmpCommunity() {
+        return snmpCommunity;
+    }
+
+    public void setSnmpCommunity(String snmpCommunity) {
+        this.snmpCommunity = snmpCommunity;
+    }
+
 }
