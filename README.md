@@ -1,7 +1,7 @@
 # 轻量级网络设备状态监测与异常告警系统
 
 > 本科毕业设计项目  
-> 当前进度：**阶段 7（系统测试与修复）已完成**
+> 当前进度：**阶段 8（论文材料整理）已完成**
 
 ## 1. 项目简介
 
@@ -164,6 +164,26 @@
 - 浏览器控制台：0 error / 0 warning
 
 ![阶段 7 移动端看板](screenshots/25-phase7-mobile-dashboard.png)
+
+### 阶段 8：论文材料整理
+
+已生成一套可直接修改的论文材料：
+
+- 论文初稿 DOCX：封面、中英文摘要、7 章正文、5 张图表、12 张表格、参考文献和附录
+- 论文初稿 PDF 预览
+- 系统架构图、部署图、监测流程图、E-R 图、告警状态图
+- 论文材料说明和答辩提纲
+- 图表和 Word 文档的可重复生成脚本
+
+论文材料目录：
+
+- [论文初稿.docx](thesis/论文初稿.docx)
+- [论文初稿.pdf](thesis/论文初稿.pdf)
+- [论文材料说明](thesis/README.md)
+- [答辩提纲](thesis/答辩提纲.md)
+- [论文图表](thesis/images/)
+
+论文初稿约 31 页，使用真实测试数据：4 台设备、约 1335 条监测记录、3 条告警、23 个自动化测试通过、检测全部约 1.94s、MySQL 断连 503/恢复 200。
 
 ## 3. 技术栈
 
@@ -388,6 +408,11 @@ network-monitor-system/
 ├── tools/snmp-agent/
 │   ├── simulated_agent.py                 # 本机模拟 SNMP v2c Agent
 │   └── README.md
+├── thesis/
+│   ├── 论文初稿.docx / 论文初稿.pdf
+│   ├── 答辩提纲.md
+│   ├── images/                             # 架构图、部署图、E-R 图等
+│   └── scripts/                            # 图表与论文生成脚本
 ├── sql/init.sql
 ├── sql/phase3-migration.sql
 ├── sql/phase4-migration.sql
@@ -466,6 +491,8 @@ SNMP 设备响应中包含 `snmpEnabled`、`snmpStatus`、`snmpSysName`、`snmpS
 - [接口说明](docs/接口说明.md)
 - [测试记录](docs/测试记录.md)
 - [开发进度记录](docs/开发进度记录.md)
+- [论文材料说明](thesis/README.md)
+- [答辩提纲](thesis/答辩提纲.md)
 
 ## 11. 后续阶段
 
@@ -478,7 +505,7 @@ SNMP 设备响应中包含 `snmpEnabled`、`snmpStatus`、`snmpSysName`、`snmpS
 | 阶段 5 | ECharts 数据看板和历史趋势 | 已完成 |
 | 阶段 6 | SNMP v2c 扩展 | 已完成 |
 | 阶段 7 | 系统测试、异常测试、性能测试和修复 | 已完成 |
-| 阶段 8 | 论文材料整理 | 待开发 |
+| 阶段 8 | 论文材料整理 | 已完成 |
 
 ## 12. Git 状态与远程备份
 
@@ -500,4 +527,4 @@ SNMP 设备响应中包含 `snmpEnabled`、`snmpStatus`、`snmpSysName`、`snmpS
 - 已通过 SSH 认证，`main` 已推送并设置上游 `origin/main`。
 - 工作区干净。
 
-后续阶段 8 整理论文材料时，不要把 SNMP 社区字符串或数据库密码写入仓库。
+论文材料中的测试数据来自本机实验环境；正式提交前请按学校模板替换封面信息、调整格式并核对参考文献。
