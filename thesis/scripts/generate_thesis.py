@@ -3,12 +3,13 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from docx import Document
 from docx.enum.section import WD_SECTION
 from docx.enum.table import WD_TABLE_ALIGNMENT
-from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_BREAK
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TAB_ALIGNMENT, WD_TAB_LEADER
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Cm, Inches, Pt, RGBColor
@@ -18,6 +19,8 @@ PROJECT_ROOT = BASE_DIR.parent
 IMAGE_DIR = BASE_DIR / "images"
 SCREENSHOT_DIR = PROJECT_ROOT / "screenshots"
 OUTPUT = BASE_DIR / "论文初稿.docx"
+TOC_PAGES_PATH = BASE_DIR / "toc_pages.json"
+LOGO_PATH = IMAGE_DIR / "wuhan-college-logo.jpeg"
 
 TITLE = "轻量级网络设备状态监测与异常告警系统设计与研究"
 TITLE_EN = "Design and Research of a Lightweight Network Device Status Monitoring and Alert System"
@@ -46,43 +49,52 @@ def configure_document(doc: Document) -> None:
     section = doc.sections[0]
     section.page_width = Cm(21.0)
     section.page_height = Cm(29.7)
-    section.top_margin = Cm(2.54)
-    section.bottom_margin = Cm(2.54)
-    section.left_margin = Cm(3.0)
-    section.right_margin = Cm(2.6)
-    # 封面不显示页眉和页码
-    section.different_first_page_header_footer = True
+    # 与模板一致：左 2.5、右 2.0、上 3.0、下 2.5
+    section.top_margin = Cm(3.0)
+    section.bottom_margin = Cm(2.5)
+    section.left_margin = Cm(2.5)
+    section.right_margin = Cm(2.0)
+    section.header_distance = Cm(1.5)
+    section.footer_distance = Cm(1.75)
 
     normal = doc.styles["Normal"]
     style_font(normal, 12, False, "宋体")
-    normal.paragraph_format.line_spacing = 1.5
-    normal.paragraph_format.space_after = Pt(4)
+    normal.paragraph_format.line_spacing = 1.25
+    normal.paragraph_format.space_after = Pt(2)
 
     for name, size in (("Heading 1", 16), ("Heading 2", 14), ("Heading 3", 12)):
         style = doc.styles[name]
-        style_font(style, size, True, "黑体", "Times New Roman", BLACK)
-        style.paragraph_format.space_before = Pt(12 if name == "Heading 1" else 8)
-        style.paragraph_format.space_after = Pt(6 if name == "Heading 1" else 4)
+        style_font(style, size, True, "宋体", "Times New Roman", BLACK)
+        style.paragraph_format.line_spacing = 1.25
+        style.paragraph_format.space_before = Pt(15.6 if name == "Heading 1" else 6)
+        style.paragraph_format.space_after = Pt(15.6 if name == "Heading 1" else 3)
+    doc.styles["Heading 1"].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    doc.styles["Heading 2"].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    doc.styles["Heading 3"].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
 
     for name in ("List Bullet", "List Number"):
         style = doc.styles[name]
         style_font(style, 12, False, "宋体")
 
     caption = doc.styles["Caption"]
-    style_font(caption, 10.5, False, "宋体", "Times New Roman", MUTED)
+    style_font(caption, 10, False, "黑体", "Times New Roman", BLACK)
     caption.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    caption.paragraph_format.space_after = Pt(8)
+    caption.paragraph_format.space_before = Pt(3)
+    caption.paragraph_format.space_after = Pt(3)
 
-    # 页眉
-    header = section.header.paragraphs[0]
-    header.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    run = header.add_run(TITLE)
-    set_run_font(run, 9, False, MUTED)
 
-    # 页脚页码
-    footer = section.footer.paragraphs[0]
-    footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = footer.add_run()
+def continue_page_number(section):
+    """移除分节复制过来的页码起始值，让页码沿用上一节。"""
+    for element in section._sectPr.findall(qn("w:pgNumType")):
+        section._sectPr.remove(element)
+
+
+def add_page_number(section, start=None):
+    footer = section.footer
+    footer.is_linked_to_previous = False
+    p = footer.paragraphs[0]
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = p.add_run()
     fld_begin = OxmlElement("w:fldChar")
     fld_begin.set(qn("w:fldCharType"), "begin")
     instr = OxmlElement("w:instrText")
@@ -94,14 +106,44 @@ def configure_document(doc: Document) -> None:
     run._r.append(instr)
     run._r.append(fld_end)
     set_run_font(run, 9, False, MUTED)
+    if start is not None:
+        pg = OxmlElement("w:pgNumType")
+        pg.set(qn("w:start"), str(start))
+        section._sectPr.append(pg)
+
+
+def clear_header_footer(section):
+    section.header.is_linked_to_previous = False
+    section.footer.is_linked_to_previous = False
+    for part in (section.header, section.footer):
+        for p in part.paragraphs:
+            p.text = ""
+
+
+def add_header(section):
+    section.header.is_linked_to_previous = False
+    p = section.header.paragraphs[0]
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.text = ""
+    run = p.add_run("武汉学院毕业论文（设计）")
+    set_run_font(run, 9, False, BLACK)
+    pPr = p._p.get_or_add_pPr()
+    borders = OxmlElement("w:pBdr")
+    bottom = OxmlElement("w:bottom")
+    bottom.set(qn("w:val"), "single")
+    bottom.set(qn("w:sz"), "6")
+    bottom.set(qn("w:space"), "1")
+    bottom.set(qn("w:color"), "000000")
+    borders.append(bottom)
+    pPr.append(borders)
 
 
 def para(doc: Document, text: str, indent=True, size=12, bold=False, align=None, color=None):
     p = doc.add_paragraph()
-    p.paragraph_format.line_spacing = 1.5
-    p.paragraph_format.space_after = Pt(4)
+    p.paragraph_format.line_spacing = 1.25
+    p.paragraph_format.space_after = Pt(2)
     if indent:
-        p.paragraph_format.first_line_indent = Cm(0.74)
+        p.paragraph_format.first_line_indent = Cm(0.85)
     if align is not None:
         p.alignment = align
     run = p.add_run(text)
@@ -175,116 +217,235 @@ def table(doc: Document, headers: list[str], rows: list[list[str]], caption: str
     return t
 
 
-def add_toc(doc: Document) -> None:
-    note = doc.add_paragraph()
-    run = note.add_run("说明：本初稿目录列出章节结构，不锁定页码。正式排版时可在 Word 中使用"
-                       "“引用 → 目录”按标题自动生成带页码目录。")
-    set_run_font(run, 9, False, MUTED)
+TOC_ENTRIES = [
+    ("1 绪论", True),
+    ("1.1 研究背景与意义", False),
+    ("1.2 国内外研究与应用现状", False),
+    ("1.3 研究目标与主要内容", False),
+    ("1.4 论文结构", False),
+    ("2 相关技术", True),
+    ("2.1 Spring Boot 与分层架构", False),
+    ("2.2 MySQL 与数据持久化", False),
+    ("2.3 ICMP 与系统 Ping", False),
+    ("2.4 SNMP v2c 与 SNMP4J", False),
+    ("2.5 Thymeleaf、Bootstrap 与 ECharts", False),
+    ("3 需求分析", True),
+    ("3.1 用户与使用场景", False),
+    ("3.2 功能需求", False),
+    ("3.3 非功能需求", False),
+    ("3.4 业务流程", False),
+    ("4 系统设计", True),
+    ("4.1 总体架构", False),
+    ("4.2 部署设计", False),
+    ("4.3 模块设计", False),
+    ("4.4 数据库设计", False),
+    ("4.5 监测与告警流程", False),
+    ("4.6 告警规则与状态机", False),
+    ("4.7 SNMP 采集设计", False),
+    ("5 系统实现", True),
+    ("5.1 开发环境", False),
+    ("5.2 设备管理实现", False),
+    ("5.3 Ping 监测实现", False),
+    ("5.4 告警实现", False),
+    ("5.5 数据看板实现", False),
+    ("5.6 SNMP 实现", False),
+    ("5.7 配置与安全实现", False),
+    ("6 系统测试", True),
+    ("6.1 测试环境与范围", False),
+    ("6.2 功能测试", False),
+    ("6.3 自动化测试", False),
+    ("6.4 超时、性能与数据库故障测试", False),
+    ("6.5 移动端测试", False),
+    ("6.6 测试结论", False),
+    ("7 总结与展望", True),
+    ("7.1 工作总结", False),
+    ("7.2 不足", False),
+    ("7.3 后续工作", False),
+    ("参考文献", True),
+    ("致  谢", True),
+    ("附  录", True),
+    ("附录 A 主要接口", True),
+    ("附录 B 测试数据摘要", True),
+    ("附录 C 图表与截图清单", True),
+]
 
-    entries = [
-        ("1 绪论", True),
-        ("1.1 研究背景与意义", False),
-        ("1.2 国内外研究与应用现状", False),
-        ("1.3 研究目标与主要内容", False),
-        ("1.4 论文结构", False),
-        ("2 相关技术", True),
-        ("2.1 Spring Boot 与分层架构", False),
-        ("2.2 MySQL 与数据持久化", False),
-        ("2.3 ICMP 与系统 Ping", False),
-        ("2.4 SNMP v2c 与 SNMP4J", False),
-        ("2.5 Thymeleaf、Bootstrap 与 ECharts", False),
-        ("3 需求分析", True),
-        ("3.1 用户与使用场景", False),
-        ("3.2 功能需求", False),
-        ("3.3 非功能需求", False),
-        ("3.4 业务流程", False),
-        ("4 系统设计", True),
-        ("4.1 总体架构", False),
-        ("4.2 部署设计", False),
-        ("4.3 模块设计", False),
-        ("4.4 数据库设计", False),
-        ("4.5 监测与告警流程", False),
-        ("4.6 告警规则与状态机", False),
-        ("4.7 SNMP 采集设计", False),
-        ("5 系统实现", True),
-        ("5.1 开发环境", False),
-        ("5.2 设备管理实现", False),
-        ("5.3 Ping 监测实现", False),
-        ("5.4 告警实现", False),
-        ("5.5 数据看板实现", False),
-        ("5.6 SNMP 实现", False),
-        ("5.7 配置与安全实现", False),
-        ("6 系统测试", True),
-        ("6.1 测试环境与范围", False),
-        ("6.2 功能测试", False),
-        ("6.3 自动化测试", False),
-        ("6.4 超时、性能与数据库故障测试", False),
-        ("6.5 移动端测试", False),
-        ("6.6 测试结论", False),
-        ("7 总结与展望", True),
-        ("7.1 工作总结", False),
-        ("7.2 不足", False),
-        ("7.3 后续工作", False),
-        ("参考文献", True),
-        ("附录 A 主要接口", True),
-        ("附录 B 测试数据摘要", True),
-        ("附录 C 图表与截图清单", True),
-    ]
-    for text, is_chapter in entries:
+
+def add_toc(doc: Document) -> None:
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.paragraph_format.space_before = Pt(24)
+    p.paragraph_format.space_after = Pt(12)
+    run = p.add_run("目  录")
+    set_run_font(run, 18, False, BLACK, "宋体")
+
+    pages = {}
+    if TOC_PAGES_PATH.exists():
+        pages = json.loads(TOC_PAGES_PATH.read_text(encoding="utf-8"))
+
+    for text, is_chapter in TOC_ENTRIES:
         p = doc.add_paragraph()
-        p.paragraph_format.space_after = Pt(2)
-        p.paragraph_format.left_indent = Cm(0 if is_chapter else 0.8)
+        p.paragraph_format.line_spacing = 1.25
+        p.paragraph_format.space_after = Pt(0)
+        p.paragraph_format.left_indent = Cm(0 if is_chapter else 0.35)
+        p.paragraph_format.tab_stops.add_tab_stop(
+            Cm(15.4), WD_TAB_ALIGNMENT.RIGHT, WD_TAB_LEADER.DOTS
+        )
         run = p.add_run(text)
-        set_run_font(run, 12 if is_chapter else 11, is_chapter, BLACK if is_chapter else MUTED)
+        set_run_font(run, 12, False, BLACK, "宋体")
+        page = pages.get(text, "")
+        run = p.add_run("\t" + str(page))
+        set_run_font(run, 12, False, BLACK, "宋体")
 
 
 def cover(doc: Document) -> None:
-    for _ in range(3):
-        doc.add_paragraph()
-    p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = p.add_run("本科毕业设计（论文）")
-    set_run_font(run, 18, True, BLACK, "黑体")
+    # 武汉学院校徽
+    logo = doc.add_paragraph()
+    logo.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    logo.paragraph_format.space_before = Pt(20)
+    logo.add_run().add_picture(str(LOGO_PATH), width=Cm(5.2))
 
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p.paragraph_format.space_before = Pt(30)
+    p.paragraph_format.space_before = Pt(26)
+    run = p.add_run("本科毕业论文（设计）")
+    set_run_font(run, 36, True, BLACK, "黑体")
+
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.paragraph_format.space_before = Pt(26)
     run = p.add_run(TITLE)
     set_run_font(run, 22, True, BLACK, "黑体")
 
+    rows = [
+        ("论文题目", TITLE),
+        ("姓    名", "________________"),
+        ("学    号", "________________"),
+        ("班    级", "________________"),
+        ("届    次", "2027 届"),
+        ("专    业", "网络工程"),
+        ("学    院（部）", "信息工程学院"),
+        ("指导教师", "________________"),
+        ("完成时间", "2027 年 4 月"),
+    ]
+    table = doc.add_table(rows=len(rows), cols=3)
+    table.style = "Table Grid"
+    table.alignment = WD_TABLE_ALIGNMENT.CENTER
+    table.autofit = False
+    widths = [Cm(4.0), Cm(0.6), Cm(11.4)]
+    for i, (label, value) in enumerate(rows):
+        cells = table.rows[i].cells
+        for j, text in enumerate((label, "：", value)):
+            cells[j].width = widths[j]
+            cells[j].text = text
+            for p in cells[j].paragraphs:
+                p.alignment = WD_ALIGN_PARAGRAPH.LEFT if j == 0 else (
+                    WD_ALIGN_PARAGRAPH.CENTER if j == 1 else WD_ALIGN_PARAGRAPH.LEFT
+                )
+                p.paragraph_format.space_after = Pt(0)
+                for r in p.runs:
+                    set_run_font(r, 14, True if j == 2 else False, BLACK, "宋体")
+
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p.paragraph_format.space_before = Pt(14)
-    run = p.add_run(TITLE_EN)
-    set_run_font(run, 12, False, MUTED, "Times New Roman", "Times New Roman")
+    p.paragraph_format.space_before = Pt(18)
+    run = p.add_run("（封面信息请按学校要求填写）")
+    set_run_font(run, 10.5, False, MUTED)
 
-    for _ in range(4):
-        doc.add_paragraph()
 
-    info = [
-        ("学生姓名", "________________"),
-        ("学    号", "________________"),
-        ("专    业", "网络工程"),
-        ("指导教师", "________________"),
-        ("完成日期", "2026 年 11 月"),
-    ]
-    for label, value in info:
+def declaration(doc: Document) -> None:
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.paragraph_format.space_before = Pt(24)
+    run = p.add_run("作者声明")
+    set_run_font(run, 22, True, BLACK, "黑体")
+
+    for text in [
+        "本毕业论文（设计）是在导师的指导下由本人独立撰写完成的，没有剽窃、抄袭、造假等违反道德、学术规范和其他侵权行为。"
+        "对本论文（设计）的研究做出重要贡献的个人和集体，均已在文中以明确方式标明。因本毕业论文（设计）引起的法律结果完全由本人承担。",
+        "毕业论文（设计）成果归武汉学院所有。",
+        "特此声明",
+    ]:
         p = doc.add_paragraph()
-        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        run = p.add_run(f"{label}：{value}")
+        p.paragraph_format.line_spacing = 1.5
+        p.paragraph_format.first_line_indent = Cm(0.99)
+        p.paragraph_format.space_after = Pt(8)
+        run = p.add_run(text)
         set_run_font(run, 14, False, BLACK, "宋体")
 
-    for _ in range(3):
-        doc.add_paragraph()
-    p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = p.add_run("说明：本稿为初稿，学校名称、个人信息、格式模板和参考文献格式请按学校要求替换。")
-    set_run_font(run, 9, False, MUTED)
+    table = doc.add_table(rows=4, cols=3)
+    table.style = "Table Grid"
+    table.alignment = WD_TABLE_ALIGNMENT.CENTER
+    table.autofit = False
+    rows = [
+        ("作者专业", "网络工程"),
+        ("作者学号", "________________"),
+        ("作者签名", "________________"),
+    ]
+    for i, (label, value) in enumerate(rows):
+        cells = table.rows[i].cells
+        cells[0].text = label
+        cells[1].text = "："
+        cells[2].text = value
+        for cell in cells:
+            for p in cell.paragraphs:
+                p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                for r in p.runs:
+                    set_run_font(r, 12, False, BLACK, "宋体")
+    last = table.rows[3].cells
+    last[0].text = ""
+    merged = last[1].merge(last[2])
+    merged.text = "年        月        日"
+    for p in merged.paragraphs:
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        for r in p.runs:
+            set_run_font(r, 12, False, BLACK, "宋体")
     doc.add_page_break()
 
 
+def title_page(doc: Document) -> None:
+    for _ in range(2):
+        doc.add_paragraph()
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = p.add_run(TITLE)
+    set_run_font(run, 22, True, BLACK, "宋体")
+
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.paragraph_format.space_before = Pt(12)
+    run = p.add_run("________________")
+    set_run_font(run, 16, False, BLACK, "黑体")
+
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.paragraph_format.space_before = Pt(24)
+    run = p.add_run(TITLE_EN)
+    set_run_font(run, 22, False, BLACK, "Times New Roman", "Times New Roman")
+
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.paragraph_format.space_before = Pt(12)
+    run = p.add_run("________________")
+    set_run_font(run, 16, False, BLACK, "Times New Roman", "Times New Roman")
+
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.paragraph_format.space_before = Pt(120)
+    run = p.add_run("2027 年 4 月")
+    set_run_font(run, 16, True, BLACK, "宋体")
+
+
+def centered_title(doc: Document, text: str, size: int, font_name="宋体", ascii_font="Times New Roman"):
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.paragraph_format.space_before = Pt(24)
+    p.paragraph_format.space_after = Pt(12)
+    run = p.add_run(text)
+    set_run_font(run, size, True, BLACK, font_name, ascii_font)
+
+
 def abstract_cn(doc: Document) -> None:
-    doc.add_heading("摘要", level=1)
+    centered_title(doc, "摘  要", 18, "宋体")
     para(doc, "随着校园网和小型局域网设备数量增加，网络管理员需要持续掌握设备在线状态、响应时间和异常情况。"
               "传统人工巡检效率低，而大型网管平台部署复杂、学习成本较高。针对这一问题，本文设计并实现了一个"
               "轻量级网络设备状态监测与异常告警系统。系统采用 Java 21、Spring Boot 4、Spring Data JPA、MySQL、"
@@ -297,15 +458,16 @@ def abstract_cn(doc: Document) -> None:
               "23 个自动化测试全部通过，Ping 超时约 1.73 秒，SNMP 超时约 3.05 秒，MySQL 断连时健康检查返回 503，"
               "恢复后返回 200。系统具有部署轻量、结构清晰、便于扩展的特点，可作为中小型网络环境的基础监测工具。")
     p = doc.add_paragraph()
+    p.paragraph_format.space_before = Pt(12)
     run = p.add_run("关键词：")
-    set_run_font(run, 12, True)
+    set_run_font(run, 16, True)
     run = p.add_run("网络设备监测；ICMP；SNMP v2c；异常告警；Spring Boot；ECharts")
     set_run_font(run, 12)
     doc.add_page_break()
 
 
 def abstract_en(doc: Document) -> None:
-    doc.add_heading("Abstract", level=1)
+    centered_title(doc, "Abstract", 18, "Times New Roman", "Times New Roman")
     para(doc, "With the growth of campus and small local area networks, administrators need continuous visibility into "
               "device availability, response time and abnormal events. Manual inspection is inefficient, while large "
               "network management platforms are complex to deploy and learn. This thesis designs and implements a "
@@ -321,8 +483,9 @@ def abstract_en(doc: Document) -> None:
               "show that 23 automated tests pass, Ping timeout is about 1.73 s, SNMP timeout is about 3.05 s, and the "
               "health endpoint returns 503 during a MySQL outage and 200 after recovery.", indent=False)
     p = doc.add_paragraph()
+    p.paragraph_format.space_before = Pt(12)
     run = p.add_run("Key words: ")
-    set_run_font(run, 12, True, font_name="Times New Roman", ascii_font="Times New Roman")
+    set_run_font(run, 16, True, font_name="Times New Roman", ascii_font="Times New Roman")
     run = p.add_run("network monitoring; ICMP; SNMP v2c; alerting; Spring Boot; ECharts")
     set_run_font(run, 12, font_name="Times New Roman", ascii_font="Times New Roman")
     doc.add_page_break()
@@ -711,8 +874,16 @@ def references(doc: Document) -> None:
          size=9, color=MUTED)
 
 
+def acknowledgements(doc: Document) -> None:
+    doc.add_heading("致  谢", level=1)
+    para(doc, "本课题从选题、需求分析、系统设计、编码实现到测试和论文整理，得到了指导教师和同学的帮助。"
+              "在系统开发过程中，指导教师在需求范围、技术路线和论文结构方面提出了许多建议，使课题能够按阶段推进。"
+              "感谢实验室提供的测试环境，也感谢参与演示和提出意见的同学。")
+    para(doc, "通过本次毕业设计，我完成了从需求分析到系统实现、测试和文档整理的完整过程，加深了对 Java Web 开发、"
+              "网络监测协议和软件工程方法的理解。由于个人能力和时间有限，系统仍有不足，恳请各位老师批评指正。")
+
+
 def appendix(doc: Document) -> None:
-    doc.add_page_break()
     doc.add_heading("附录 A 主要接口", level=1)
     table(doc,
           ["方法", "路径", "说明"],
@@ -769,25 +940,41 @@ def main() -> None:
     doc.core_properties.subject = "本科毕业设计论文初稿"
     doc.core_properties.author = "laijdsh"
 
+    # 第 1 节：封面（无页眉、无页码）
+    clear_header_footer(doc.sections[0])
     cover(doc)
+
+    # 第 2 节：作者声明、题名页（有页眉，无页码）
+    front = doc.add_section(WD_SECTION.NEW_PAGE)
+    clear_header_footer(front)
+    add_header(front)
+    declaration(doc)
+    title_page(doc)
+
+    # 第 3 节：摘要、英文摘要、目录（页码从 1 开始）
+    abstract_section = doc.add_section(WD_SECTION.NEW_PAGE)
+    clear_header_footer(abstract_section)
+    add_header(abstract_section)
+    add_page_number(abstract_section, start=1)
     abstract_cn(doc)
     abstract_en(doc)
-
-    p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = p.add_run("目录")
-    set_run_font(run, 18, True, BLACK, "黑体")
     add_toc(doc)
-    doc.add_page_break()
+
+    # 第 4 节：正文、参考文献、致谢、附录（页码延续）
+    body_section = doc.add_section(WD_SECTION.NEW_PAGE)
+    add_header(body_section)
+    continue_page_number(body_section)
 
     chapter1(doc)
-    chapter2(doc)
-    chapter3(doc)
-    chapter4(doc)
-    chapter5(doc)
-    chapter6(doc)
-    chapter7(doc)
+    for chapter in (chapter2, chapter3, chapter4, chapter5, chapter6, chapter7):
+        doc.add_page_break()
+        chapter(doc)
+
+    doc.add_page_break()
     references(doc)
+    doc.add_page_break()
+    acknowledgements(doc)
+    doc.add_page_break()
     appendix(doc)
 
     doc.save(OUTPUT)
