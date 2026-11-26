@@ -344,6 +344,8 @@ network-monitor-system/
 - 本地提交：
   - `b9f6959`：阶段 1-3 代码、SQL、文档、截图
   - `b5bbb0e`：Git 状态文档
+  - `13f0c38`：记录 GitHub 远程仓库推送
+  - `fc2f9ca`：阶段 4 告警代码、SQL、页面、截图和文档
 - 远程仓库：
   - <https://github.com/laijdsh/harness>
   - SSH 地址：`git@github.com:laijdsh/harness.git`
