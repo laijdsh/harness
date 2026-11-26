@@ -524,6 +524,7 @@ SNMP 设备响应中包含 `snmpEnabled`、`snmpStatus`、`snmpSysName`、`snmpS
   - `9ab5e6f`：阶段 8 按武汉学院模板重构版式
   - `6099e3c`：忽略 Python 脚本缓存
   - `f915870`：按开题报告补充研究现状并插入脚注
+  - `7d7725b`：脚注改为带圈标记并合并分散
 - 远程仓库：
   - <https://github.com/laijdsh/harness>
   - SSH 地址：`git@github.com:laijdsh/harness.git`
