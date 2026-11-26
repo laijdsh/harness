@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="轻量级网络设备状态监测与异常告警系统">
+    <title th:text="${systemName}">轻量级网络设备状态监测与异常告警系统</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+
+<header class="topbar">
+    <div class="topbar-inner">
+        <div class="brand">
+            <div class="brand-mark" aria-hidden="true">NM</div>
+            <div>
+                <h1 th:text="${systemName}">轻量级网络设备状态监测与异常告警系统</h1>
+                <p>Network Device Monitoring &amp; Alert System</p>
+            </div>
+        </div>
+        <div class="version-chip">
+            版本 <span th:text="${appVersion}">0.1.0</span>
+        </div>
+    </div>
+</header>
+
+<main class="container">
+
+    <section class="hero">
+        <div class="hero-copy">
+            <span class="eyebrow">PHASE 3 · NETWORK MONITORING</span>
+            <h2>让设备状态从“未知”变成可验证的在线或离线</h2>
+            <p>
+                当前阶段接入 Ping 检测，记录响应时间和检测历史，并支持手动检测、
+                检测全部和每 60 秒自动检测。告警判断将在下一阶段实现。
+            </p>
+            <div class="hero-actions">
+                <a class="button-primary" th:href="@{/devices}">进入设备管理</a>
+                <a class="button-ghost" th:href="@{/api/devices}" target="_blank" rel="noopener">查看设备 API</a>
+            </div>
+        </div>
+        <div class="hero-meta">
+            <div>
+                <span>服务时间</span>
+                <strong th:text="${serverTime}">--</strong>
+            </div>
+            <div>
+                <span>监听端口</span>
+                <strong>8080</strong>
+            </div>
+        </div>
+    </section>
+
+    <section class="cards" aria-label="系统状态">
+        <article class="card">
+            <span class="card-label">应用状态</span>
+            <strong id="system-status" class="status loading" aria-live="polite">检查中</strong>
+            <p id="system-message">正在读取 /api/health ...</p>
+        </article>
+
+        <article class="card">
+            <span class="card-label">数据库</span>
+            <strong id="database-status" class="status loading" aria-live="polite">检查中</strong>
+            <p>MySQL 8.4 · network_monitor</p>
+        </article>
+
+        <article class="card">
+            <span class="card-label">当前阶段</span>
+            <strong class="status up">PHASE 3</strong>
+            <p>Ping 检测 · 响应时间 · 定时任务</p>
+        </article>
+    </section>
+
+    <section class="panel">
+        <div class="panel-head">
+            <div>
+                <h3>接口与后续模块</h3>
+                <p>设备管理、Ping 检测和监测历史接口已可用，告警和看板为后续阶段占位。</p>
+            </div>
+            <button id="refresh-button" type="button">刷新状态</button>
+        </div>
+
+        <div class="endpoint-grid">
+            <a class="endpoint available" th:href="@{/api/health}" target="_blank" rel="noopener">
+                <span class="method">GET</span>
+                <code>/api/health</code>
+                <small>应用与数据库健康检查</small>
+            </a>
+
+            <a class="endpoint available" th:href="@{/devices}">
+                <span class="method">PAGE</span>
+                <code>/devices</code>
+                <small>设备管理页面</small>
+            </a>
+
+            <a class="endpoint available" th:href="@{/api/devices}" target="_blank" rel="noopener">
+                <span class="method">GET</span>
+                <code>/api/devices</code>
+                <small>设备分页查询与 CRUD</small>
+            </a>
+
+            <a class="endpoint available" th:href="@{/api/devices/1/records}" target="_blank" rel="noopener">
+                <span class="method">GET</span>
+                <code>/api/devices/1/records</code>
+                <small>设备监测历史 API</small>
+            </a>
+        </div>
+
+        <div class="check-row">
+            <span>最近一次健康检查：</span>
+            <strong id="last-checked">--</strong>
+        </div>
+    </section>
+
+    <section class="panel roadmap">
+        <div class="panel-head">
+            <div>
+                <h3>阶段 3 验收点</h3>
+                <p>这些内容会在本阶段逐项实际运行验证。</p>
+            </div>
+        </div>
+        <ul class="check-list">
+            <li>Ping 能识别本机回环在线</li>
+            <li>不可达 IP 能记录为离线</li>
+            <li>响应时间和监测历史写入数据库</li>
+            <li>手动检测、检测全部和定时任务可用</li>
+        </ul>
+    </section>
+
+</main>
+
+<footer class="footer">
+    <span>轻量级网络设备状态监测与异常告警系统</span>
+    <span>本科毕业设计 · 阶段 3</span>
+</footer>
+
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+# Maven 构建输出
+target/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+
+# VS Code 工作区级配置（用户级配置不需要提交）
+.vscode/
+
+# 日志和临时文件
+logs/
+*.log
+*.tmp
+
+# 本地敏感配置：数据库密码、SNMP 社区字符串等
+application-local.properties
+application-local.yml
+.env
+
+# 本地临时测试目录
+.tmp-*/
+
+# 操作系统生成文件
+.DS_Store
+Thumbs.db

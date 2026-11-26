@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('设备详情')}"></head>
+<body>
+
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container py-4 py-lg-5">
+    <div class="page-header">
+        <div>
+            <span class="eyebrow">DEVICE DETAIL</span>
+            <h1 th:text="${device.name}">设备详情</h1>
+            <p><code class="device-ip" th:text="${device.ipAddress}">192.168.1.1</code></p>
+        </div>
+        <div class="header-actions">
+            <a class="btn btn-outline-secondary" th:href="@{/devices}">返回列表</a>
+            <form method="post"
+                  th:action="@{/devices/{id}/check(id=${device.id}, returnTo='detail')}">
+                <button class="btn btn-success" type="submit">立即检测</button>
+            </form>
+            <a class="btn btn-primary" th:href="@{/devices/{id}/edit(id=${device.id})}">编辑设备</a>
+        </div>
+    </div>
+
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <span th:text="${successMessage}">检测完成</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="关闭"></button>
+    </div>
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span th:text="${errorMessage}">检测失败</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="关闭"></button>
+    </div>
+
+    <div class="detail-card">
+        <div class="detail-head">
+            <div>
+                <span class="detail-label">当前状态</span>
+                <span class="badge fs-6" th:classappend="${device.status.cssClass}"
+                      th:text="${device.status.displayName}">未知</span>
+            </div>
+            <span class="text-muted small">状态由手动检测或定时任务更新</span>
+        </div>
+
+        <dl class="row detail-list mb-0">
+            <dt class="col-sm-3">设备名称</dt>
+            <dd class="col-sm-9" th:text="${device.name}">核心交换机</dd>
+
+            <dt class="col-sm-3">IP 地址</dt>
+            <dd class="col-sm-9"><code class="device-ip" th:text="${device.ipAddress}">192.168.1.1</code></dd>
+
+            <dt class="col-sm-3">设备类型</dt>
+            <dd class="col-sm-9" th:text="${device.deviceType.displayName}">交换机</dd>
+
+            <dt class="col-sm-3">所属区域</dt>
+            <dd class="col-sm-9" th:text="${#strings.isEmpty(device.area) ? '—' : device.area}">—</dd>
+
+            <dt class="col-sm-3">最近检测</dt>
+            <dd class="col-sm-9" th:text="${device.lastCheckedAtText}">—</dd>
+
+            <dt class="col-sm-3">最近响应时间</dt>
+            <dd class="col-sm-9" th:text="${device.lastResponseTimeText}">—</dd>
+
+            <dt class="col-sm-3">创建时间</dt>
+            <dd class="col-sm-9" th:text="${device.createdAtText}">2026-11-25 20:30:00</dd>
+
+            <dt class="col-sm-3">更新时间</dt>
+            <dd class="col-sm-9" th:text="${device.updatedAtText}">2026-11-25 20:30:00</dd>
+
+            <dt class="col-sm-3">备注</dt>
+            <dd class="col-sm-9" th:text="${#strings.isEmpty(device.description) ? '—' : device.description}">—</dd>
+        </dl>
+    </div>
+
+    <section class="monitor-card">
+        <div class="section-heading">
+            <div>
+                <span class="eyebrow">MONITORING</span>
+                <h2>监测历史</h2>
+                <p>每次手动检测或定时检测都会保存一条记录。</p>
+            </div>
+            <span class="text-muted small">最近 10 条</span>
+        </div>
+
+        <div th:if="${latestRecord != null}" class="latest-record">
+            <div class="latest-main">
+                <span class="detail-label">最近一次</span>
+                <span class="badge" th:classappend="${latestRecord.status.cssClass}"
+                      th:text="${latestRecord.status.displayName}">在线</span>
+                <span class="latest-time" th:text="${latestRecord.checkTimeText}">2026-11-25 20:50:00</span>
+            </div>
+            <div class="latest-meta">
+                <span>响应时间：<strong th:text="${latestRecord.responseTimeText}">1 ms</strong></span>
+                <span th:if="${!#strings.isEmpty(latestRecord.resultMessage)}"
+                      th:text="${latestRecord.resultMessage}">收到 ICMP 回复</span>
+            </div>
+        </div>
+
+        <div th:if="${#lists.isEmpty(recentRecords)}" class="empty-monitor">
+            <div class="empty-icon" aria-hidden="true">⌁</div>
+            <h3>还没有监测记录</h3>
+            <p>点击“立即检测”执行第一次 Ping，记录会显示在这里。</p>
+            <form method="post"
+                  th:action="@{/devices/{id}/check(id=${device.id}, returnTo='detail')}">
+                <button class="btn btn-success" type="submit">立即检测</button>
+            </form>
+        </div>
+
+        <div th:if="${!#lists.isEmpty(recentRecords)}" class="table-responsive monitor-table">
+            <table class="table align-middle mb-0">
+                <thead>
+                <tr>
+                    <th scope="col">检测时间</th>
+                    <th scope="col">状态</th>
+                    <th scope="col">响应时间</th>
+                    <th scope="col">说明</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="record : ${recentRecords}">
+                    <td class="text-nowrap" th:text="${record.checkTimeText}">2026-11-25 20:50:00</td>
+                    <td>
+                        <span class="badge" th:classappend="${record.status.cssClass}"
+                              th:text="${record.status.displayName}">在线</span>
+                    </td>
+                    <td class="text-nowrap" th:text="${record.responseTimeText}">1 ms</td>
+                    <td th:text="${#strings.isEmpty(record.resultMessage) ? '—' : record.resultMessage}">—</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <div class="danger-zone">
+        <div>
+            <strong>删除设备</strong>
+            <p class="mb-0 text-muted small">删除后该设备的基础信息和监测历史将不可恢复。</p>
+        </div>
+        <form method="post" th:action="@{/devices/{id}/delete(id=${device.id})}"
+              onsubmit="return confirm('确定删除这台设备吗？删除后不可恢复。');">
+            <button class="btn btn-outline-danger" type="submit">删除设备</button>
+        </form>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

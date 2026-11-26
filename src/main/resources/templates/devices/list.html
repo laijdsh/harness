@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('设备管理')}"></head>
+<body>
+
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container py-4 py-lg-5">
+    <div class="page-header">
+        <div>
+            <span class="eyebrow">DEVICE INVENTORY</span>
+            <h1>设备管理</h1>
+            <p>维护交换机、路由器、服务器等网络设备的基础信息。</p>
+        </div>
+        <div class="header-actions">
+            <form method="post" th:action="@{/devices/check-all}"
+                  onsubmit="return confirm('将对全部设备执行 Ping 检测，可能需要几秒，确定继续吗？');">
+                <button class="btn btn-outline-primary btn-lg" type="submit">检测全部</button>
+            </form>
+            <a class="btn btn-primary btn-lg" th:href="@{/devices/new}">
+                <span aria-hidden="true">+</span> 添加设备
+            </a>
+        </div>
+    </div>
+
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <span th:text="${successMessage}">操作成功</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="关闭"></button>
+    </div>
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span th:text="${errorMessage}">操作失败</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="关闭"></button>
+    </div>
+
+    <form class="search-card" method="get" th:action="@{/devices}">
+        <div class="row g-3 align-items-end">
+            <div class="col-lg-5">
+                <label class="form-label" for="keyword">关键字</label>
+                <input id="keyword" class="form-control" type="search" name="keyword"
+                       th:value="${keyword}" placeholder="设备名称或 IP 地址" autocomplete="off">
+            </div>
+            <div class="col-lg-3">
+                <label class="form-label" for="type">设备类型</label>
+                <select id="type" class="form-select" name="type">
+                    <option value="">全部类型</option>
+                    <option th:each="type : ${deviceTypes}"
+                            th:value="${type}"
+                            th:text="${type.displayName}"
+                            th:selected="${type == selectedType}">交换机</option>
+                </select>
+            </div>
+            <div class="col-lg-4 d-flex gap-2">
+                <button class="btn btn-primary" type="submit">搜索</button>
+                <a class="btn btn-outline-secondary" th:href="@{/devices}">重置</a>
+            </div>
+        </div>
+    </form>
+
+    <div class="table-card">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead>
+                <tr>
+                    <th scope="col">设备名称</th>
+                    <th scope="col">IP 地址</th>
+                    <th scope="col">类型</th>
+                    <th scope="col">所属区域</th>
+                    <th scope="col">状态</th>
+                    <th scope="col">最近检测</th>
+                    <th scope="col">响应时间</th>
+                    <th scope="col" class="text-end">操作</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="device : ${devices.content}">
+                    <td>
+                        <a class="device-name" th:href="@{/devices/{id}(id=${device.id})}"
+                           th:text="${device.name}">核心交换机</a>
+                        <div class="device-desc" th:if="${!#strings.isEmpty(device.description)}"
+                             th:text="${device.description}">设备备注</div>
+                    </td>
+                    <td><code class="device-ip" th:text="${device.ipAddress}">192.168.1.1</code></td>
+                    <td th:text="${device.deviceType.displayName}">交换机</td>
+                    <td th:text="${#strings.isEmpty(device.area) ? '—' : device.area}">—</td>
+                    <td>
+                        <span class="badge" th:classappend="${device.status.cssClass}"
+                              th:text="${device.status.displayName}">未知</span>
+                    </td>
+                    <td class="text-nowrap" th:text="${device.lastCheckedAtText}">—</td>
+                    <td class="text-nowrap" th:text="${device.lastResponseTimeText}">—</td>
+                    <td class="text-end text-nowrap">
+                        <form class="d-inline" method="post"
+                              th:action="@{/devices/{id}/check(id=${device.id})}">
+                            <button class="btn btn-sm btn-outline-success" type="submit">检测</button>
+                        </form>
+                        <a class="btn btn-sm btn-outline-primary"
+                           th:href="@{/devices/{id}/edit(id=${device.id})}">编辑</a>
+                        <form class="d-inline" method="post"
+                              th:action="@{/devices/{id}/delete(id=${device.id})}"
+                              onsubmit="return confirm('确定删除这台设备吗？删除后不可恢复。');">
+                            <button class="btn btn-sm btn-outline-danger" type="submit">删除</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${devices.empty}">
+                    <td colspan="8">
+                        <div class="empty-state">
+                            <div class="empty-icon" aria-hidden="true">◎</div>
+                            <h3>还没有设备</h3>
+                            <p>先添加一台交换机、路由器或服务器，后续阶段就可以开始监测。</p>
+                            <a class="btn btn-primary" th:href="@{/devices/new}">添加第一台设备</a>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer" th:if="${devices.totalElements > 0}">
+            <span>
+                共 <strong th:text="${devices.totalElements}">0</strong> 台设备，
+                第 <strong th:text="${devices.number + 1}">1</strong> /
+                <strong th:text="${devices.totalPages}">1</strong> 页
+            </span>
+            <nav th:if="${devices.totalPages > 1}" aria-label="设备分页">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item" th:classappend="${devices.first} ? 'disabled' : ''">
+                        <a class="page-link"
+                           th:href="@{/devices(page=${devices.number - 1}, keyword=${keyword}, type=${selectedType})}">上一页</a>
+                    </li>
+                    <li class="page-item" th:each="i : ${#numbers.sequence(0, devices.totalPages - 1)}"
+                        th:classappend="${i == devices.number} ? 'active' : ''">
+                        <a class="page-link"
+                           th:href="@{/devices(page=${i}, keyword=${keyword}, type=${selectedType})}"
+                           th:text="${i + 1}">1</a>
+                    </li>
+                    <li class="page-item" th:classappend="${devices.last} ? 'disabled' : ''">
+                        <a class="page-link"
+                           th:href="@{/devices(page=${devices.number + 1}, keyword=${keyword}, type=${selectedType})}">下一页</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

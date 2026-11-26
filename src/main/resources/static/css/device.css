@@ -1,0 +1,502 @@
+/* ============================================================
+   设备管理页面样式
+   基于 Bootstrap 5.3.9，补充项目自己的网络监控风格
+   ============================================================ */
+:root {
+    --nm-bg: #f2f6fc;
+    --nm-surface: #ffffff;
+    --nm-ink: #0f172a;
+    --nm-muted: #64748b;
+    --nm-line: #e2e8f0;
+    --nm-primary: #1d4ed8;
+    --nm-primary-dark: #0b1f4d;
+    --nm-shadow: 0 14px 42px rgba(15, 23, 42, 0.07);
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background:
+        radial-gradient(circle at 10% 0%, rgba(29, 78, 216, 0.08), transparent 32rem),
+        var(--nm-bg);
+    color: var(--nm-ink);
+}
+
+main {
+    flex: 1;
+}
+
+.nm-navbar {
+    background: linear-gradient(120deg, #081a3a 0%, #0f2f67 55%, #1d4ed8 100%);
+    box-shadow: 0 8px 26px rgba(8, 26, 58, 0.22);
+}
+
+.nm-brand-mark {
+    width: 36px;
+    height: 36px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    background: rgba(255, 255, 255, 0.14);
+    color: #bfdbfe;
+    font-weight: 800;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+}
+
+.navbar-brand {
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.navbar .nav-link {
+    color: rgba(255, 255, 255, 0.76);
+}
+
+.navbar .nav-link:hover,
+.navbar .nav-link.active {
+    color: #ffffff;
+}
+
+.navbar .nav-link.disabled {
+    color: rgba(255, 255, 255, 0.38) !important;
+}
+
+.nm-footer {
+    margin-top: 2rem;
+    padding: 1.1rem 0;
+    border-top: 1px solid var(--nm-line);
+    color: var(--nm-muted);
+    font-size: 0.82rem;
+}
+
+/* ============================================================
+   页面标题
+   ============================================================ */
+.page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.page-header h1 {
+    margin: 0 0 0.35rem;
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.page-header p {
+    margin: 0;
+    color: var(--nm-muted);
+}
+
+.eyebrow {
+    display: inline-block;
+    margin-bottom: 0.45rem;
+    color: var(--nm-primary);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+}
+
+.header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.header-actions form {
+    margin: 0;
+}
+
+/* ============================================================
+   搜索卡片
+   ============================================================ */
+.search-card {
+    padding: 1.15rem 1.25rem;
+    margin-bottom: 1rem;
+    border: 1px solid var(--nm-line);
+    border-radius: 16px;
+    background: var(--nm-surface);
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.04);
+}
+
+.search-card .form-label {
+    color: var(--nm-muted);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.search-card .form-control,
+.search-card .form-select {
+    border-color: #d7e0ed;
+}
+
+/* ============================================================
+   设备表格
+   ============================================================ */
+.table-card {
+    overflow: hidden;
+    border: 1px solid var(--nm-line);
+    border-radius: 18px;
+    background: var(--nm-surface);
+    box-shadow: var(--nm-shadow);
+}
+
+.table-card .table {
+    --bs-table-bg: transparent;
+}
+
+.table-card thead th {
+    padding: 0.9rem 1rem;
+    border-bottom: 1px solid var(--nm-line);
+    background: #f7faff;
+    color: var(--nm-muted);
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.table-card tbody td {
+    padding: 0.95rem 1rem;
+    border-color: #edf2f8;
+    vertical-align: middle;
+}
+
+.table-card tbody tr:hover {
+    background: #f8fbff;
+}
+
+.device-name {
+    display: inline-block;
+    max-width: 16rem;
+    color: var(--nm-ink);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.device-name:hover {
+    color: var(--nm-primary);
+    text-decoration: underline;
+}
+
+.device-desc {
+    max-width: 18rem;
+    margin-top: 0.15rem;
+    overflow: hidden;
+    color: var(--nm-muted);
+    font-size: 0.8rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.device-ip {
+    padding: 0.2rem 0.45rem;
+    border-radius: 6px;
+    background: #eff6ff;
+    color: #1e40af;
+    font-size: 0.86rem;
+    font-weight: 600;
+}
+
+.badge {
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.table-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.1rem;
+    border-top: 1px solid var(--nm-line);
+    color: var(--nm-muted);
+    font-size: 0.86rem;
+}
+
+.table-footer .pagination {
+    margin-bottom: 0;
+}
+
+.table-footer .page-link {
+    color: var(--nm-primary);
+}
+
+.table-footer .page-item.active .page-link {
+    border-color: var(--nm-primary);
+    background: var(--nm-primary);
+}
+
+/* ============================================================
+   空状态
+   ============================================================ */
+.empty-state {
+    padding: 3rem 1rem;
+    text-align: center;
+}
+
+.empty-icon {
+    width: 54px;
+    height: 54px;
+    display: grid;
+    place-items: center;
+    margin: 0 auto 0.9rem;
+    border-radius: 50%;
+    background: #eff6ff;
+    color: var(--nm-primary);
+    font-size: 1.5rem;
+}
+
+.empty-state h3 {
+    margin-bottom: 0.35rem;
+    font-size: 1.1rem;
+}
+
+.empty-state p {
+    margin-bottom: 1rem;
+    color: var(--nm-muted);
+}
+
+/* ============================================================
+   表单
+   ============================================================ */
+.form-card {
+    max-width: 880px;
+    padding: 1.6rem;
+    border: 1px solid var(--nm-line);
+    border-radius: 18px;
+    background: var(--nm-surface);
+    box-shadow: var(--nm-shadow);
+}
+
+.form-card .form-label {
+    font-weight: 700;
+}
+
+.form-card .form-control,
+.form-card .form-select {
+    border-color: #d7e0ed;
+}
+
+.form-card .form-control:focus,
+.form-card .form-select:focus {
+    border-color: #93c5fd;
+    box-shadow: 0 0 0 0.2rem rgba(29, 78, 216, 0.12);
+}
+
+.required-mark {
+    color: #dc2626;
+}
+
+.form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    margin-top: 1.5rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--nm-line);
+}
+
+.current-status {
+    margin-top: 1.2rem;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--nm-line);
+}
+
+/* ============================================================
+   详情页
+   ============================================================ */
+.detail-card {
+    padding: 1.6rem;
+    border: 1px solid var(--nm-line);
+    border-radius: 18px;
+    background: var(--nm-surface);
+    box-shadow: var(--nm-shadow);
+}
+
+.detail-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 1.1rem;
+    margin-bottom: 0.4rem;
+    border-bottom: 1px solid var(--nm-line);
+}
+
+.detail-label {
+    margin-right: 0.5rem;
+    color: var(--nm-muted);
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.detail-list dt {
+    padding-top: 0.9rem;
+    color: var(--nm-muted);
+    font-weight: 600;
+}
+
+.detail-list dd {
+    padding-top: 0.9rem;
+    margin-bottom: 0;
+}
+
+/* ============================================================
+   监测历史
+   ============================================================ */
+.monitor-card {
+    margin-top: 1rem;
+    padding: 1.6rem;
+    border: 1px solid var(--nm-line);
+    border-radius: 18px;
+    background: var(--nm-surface);
+    box-shadow: var(--nm-shadow);
+}
+
+.section-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.section-heading h2 {
+    margin: 0 0 0.25rem;
+    font-size: 1.2rem;
+    font-weight: 800;
+}
+
+.section-heading p {
+    margin: 0;
+    color: var(--nm-muted);
+    font-size: 0.9rem;
+}
+
+.latest-record {
+    padding: 1rem 1.1rem;
+    margin-bottom: 1rem;
+    border: 1px solid #bfdbfe;
+    border-radius: 14px;
+    background: #f0f7ff;
+}
+
+.latest-main {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.latest-time {
+    color: var(--nm-muted);
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.latest-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 0.55rem;
+    color: var(--nm-muted);
+    font-size: 0.86rem;
+}
+
+.latest-meta strong {
+    color: var(--nm-ink);
+}
+
+.monitor-table {
+    border-top: 1px solid var(--nm-line);
+}
+
+.monitor-table thead th {
+    padding: 0.85rem 0.75rem;
+    border-bottom: 1px solid var(--nm-line);
+    color: var(--nm-muted);
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.monitor-table tbody td {
+    padding: 0.85rem 0.75rem;
+    border-color: #edf2f8;
+    font-size: 0.9rem;
+}
+
+.empty-monitor {
+    padding: 2.2rem 1rem;
+    text-align: center;
+}
+
+.empty-monitor h3 {
+    margin: 0.4rem 0;
+    font-size: 1.05rem;
+}
+
+.empty-monitor p {
+    margin-bottom: 1rem;
+    color: var(--nm-muted);
+}
+
+.danger-zone {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding: 1.1rem 1.25rem;
+    border: 1px solid #fecaca;
+    border-radius: 16px;
+    background: #fff7f7;
+}
+
+/* ============================================================
+   响应式
+   ============================================================ */
+@media (max-width: 767.98px) {
+    .page-header {
+        flex-direction: column;
+    }
+
+    .page-header .btn {
+        width: 100%;
+    }
+
+    .header-actions {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .header-actions form {
+        width: 100%;
+    }
+
+    .table-footer,
+    .danger-zone {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .form-card,
+    .detail-card,
+    .monitor-card {
+        padding: 1.15rem;
+    }
+}

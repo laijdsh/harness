@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${formTitle})}"></head>
+<body>
+
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container py-4 py-lg-5">
+    <div class="page-header">
+        <div>
+            <span class="eyebrow">DEVICE FORM</span>
+            <h1 th:text="${formTitle}">添加设备</h1>
+            <p>填写设备基础信息。IP 地址必须唯一，当前阶段只支持 IPv4。</p>
+        </div>
+        <a class="btn btn-outline-secondary" th:href="@{/devices}">返回列表</a>
+    </div>
+
+    <div class="form-card">
+        <form th:action="@{/devices/save}" th:object="${deviceRequest}" method="post" novalidate>
+            <input type="hidden" th:field="*{id}">
+
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <label class="form-label" for="name">
+                        设备名称 <span class="required-mark">*</span>
+                    </label>
+                    <input id="name" class="form-control"
+                           th:classappend="${#fields.hasErrors('name')} ? 'is-invalid' : ''"
+                           th:field="*{name}" placeholder="例如：核心交换机" autocomplete="off">
+                    <div class="invalid-feedback" th:if="${#fields.hasErrors('name')}"
+                         th:errors="*{name}">名称错误</div>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label" for="ipAddress">
+                        IP 地址 <span class="required-mark">*</span>
+                    </label>
+                    <input id="ipAddress" class="form-control"
+                           th:classappend="${#fields.hasErrors('ipAddress')} ? 'is-invalid' : ''"
+                           th:field="*{ipAddress}" placeholder="例如：192.168.1.1" autocomplete="off">
+                    <div class="form-text">格式示例：192.168.1.1，不能与已有设备重复。</div>
+                    <div class="invalid-feedback" th:if="${#fields.hasErrors('ipAddress')}"
+                         th:errors="*{ipAddress}">IP 错误</div>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label" for="deviceType">
+                        设备类型 <span class="required-mark">*</span>
+                    </label>
+                    <select id="deviceType" class="form-select"
+                            th:classappend="${#fields.hasErrors('deviceType')} ? 'is-invalid' : ''"
+                            th:field="*{deviceType}">
+                        <option value="">请选择设备类型</option>
+                        <option th:each="type : ${deviceTypes}"
+                                th:value="${type}"
+                                th:text="${type.displayName}">交换机</option>
+                    </select>
+                    <div class="invalid-feedback" th:if="${#fields.hasErrors('deviceType')}"
+                         th:errors="*{deviceType}">类型错误</div>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label" for="area">所属区域</label>
+                    <input id="area" class="form-control"
+                           th:classappend="${#fields.hasErrors('area')} ? 'is-invalid' : ''"
+                           th:field="*{area}" placeholder="例如：教学楼 A 区" autocomplete="off">
+                    <div class="invalid-feedback" th:if="${#fields.hasErrors('area')}"
+                         th:errors="*{area}">区域错误</div>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label" for="description">备注</label>
+                    <textarea id="description" class="form-control" rows="3"
+                              th:classappend="${#fields.hasErrors('description')} ? 'is-invalid' : ''"
+                              th:field="*{description}"
+                              placeholder="例如：核心机房机柜 03，负责办公网汇聚"></textarea>
+                    <div class="invalid-feedback" th:if="${#fields.hasErrors('description')}"
+                         th:errors="*{description}">备注错误</div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button class="btn btn-primary" type="submit">保存设备</button>
+                <a class="btn btn-outline-secondary" th:href="@{/devices}">取消</a>
+            </div>
+
+            <div th:if="${currentStatus != null}" class="current-status">
+                <span class="text-muted">当前监测状态：</span>
+                <span class="badge" th:classappend="${currentStatus.cssClass}"
+                      th:text="${currentStatus.displayName}">未知</span>
+                <span class="text-muted small ms-2">状态由后续监测任务维护，本阶段不手工修改。</span>
+            </div>
+        </form>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>
