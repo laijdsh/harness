@@ -490,6 +490,7 @@ SNMP 设备响应中包含 `snmpEnabled`、`snmpStatus`、`snmpSysName`、`snmpS
   - `fc2f9ca`：阶段 4 告警代码、SQL、页面、截图和文档
   - `6d1614e`：阶段 5 ECharts 看板、趋势接口、本地 ECharts 和文档
   - `1550501`：阶段 6 SNMP v2c、模拟 Agent、页面和文档
+  - `6d019a6`：阶段 7 自动化测试、移动端修复和文档
 - 远程仓库：
   - <https://github.com/laijdsh/harness>
   - SSH 地址：`git@github.com:laijdsh/harness.git`
