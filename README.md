@@ -1,7 +1,7 @@
 # 轻量级网络设备状态监测与异常告警系统
 
 > 本科毕业设计项目  
-> 当前进度：**阶段 6（SNMP v2c 扩展）已完成**
+> 当前进度：**阶段 7（系统测试与修复）已完成**
 
 ## 1. 项目简介
 
@@ -132,6 +132,35 @@
 - 浏览器控制台：0 error / 0 warning
 
 ![阶段 6 设备 SNMP](screenshots/21-phase6-device-snmp.png)
+
+### 阶段 7：系统测试与修复
+
+- 自动化测试从 2 个增加到 23 个
+- 覆盖告警规则、设备 SNMP 校验、参数校验、看板聚合和 SNMP 边界逻辑
+- 验证无效 ID、空搜索结果、重复 IP、非法 IP、非法 SNMP 端口
+- 测试检测全部、Ping 超时、SNMP 超时耗时
+- 完成 390×844 移动端页面检查
+- 修复移动端看板和设备详情表格被压缩的问题：
+  - 表格改为卡片内部横向滚动
+  - 增加“左右滑动查看”提示
+- MySQL 服务停止/启动因当前会话无管理员权限被拒绝，真实断连测试未完成；
+  `HealthService` 的数据库 DOWN 分支由单元测试覆盖
+
+当前阶段实际验证结果：
+
+- Maven 测试：`Tests run: 23, Failures: 0, Errors: 0`
+- 无效设备 ID：API 404，页面 302 回列表
+- 空设备搜索：`totalElements=0`
+- 重复 IP：HTTP 409
+- 非法 IP：HTTP 400
+- 非法 SNMP 端口 70000：HTTP 400
+- 检测全部 4 台：约 1.94s
+- Ping 超时：约 1.73s
+- SNMP 超时（端口关闭、含重试）：约 3.05s
+- 移动端 390×844：页面 `scrollWidth=390`，无整体横向溢出
+- 浏览器控制台：0 error / 0 warning
+
+![阶段 7 移动端看板](screenshots/25-phase7-mobile-dashboard.png)
 
 ## 3. 技术栈
 
@@ -360,7 +389,7 @@ network-monitor-system/
 ├── sql/phase3-migration.sql
 ├── sql/phase4-migration.sql
 ├── sql/phase6-migration.sql
-└── screenshots/16~24-phase4~6-*.png
+└── screenshots/16~26-phase4~7-*.png
 ```
 
 ## 8. 接口
@@ -445,7 +474,7 @@ SNMP 设备响应中包含 `snmpEnabled`、`snmpStatus`、`snmpSysName`、`snmpS
 | 阶段 4 | 连续失败判断、延迟阈值、告警生成与恢复、告警去重 | 已完成 |
 | 阶段 5 | ECharts 数据看板和历史趋势 | 已完成 |
 | 阶段 6 | SNMP v2c 扩展 | 已完成 |
-| 阶段 7 | 系统测试、异常测试、性能测试和修复 | 待开发 |
+| 阶段 7 | 系统测试、异常测试、性能测试和修复 | 已完成（数据库断连实测受权限限制） |
 | 阶段 8 | 论文材料整理 | 待开发 |
 
 ## 12. Git 状态与远程备份
@@ -467,4 +496,4 @@ SNMP 设备响应中包含 `snmpEnabled`、`snmpStatus`、`snmpSysName`、`snmpS
 - 已通过 SSH 认证，`main` 已推送并设置上游 `origin/main`。
 - 工作区干净。
 
-后续阶段 7 进行系统测试时，不要把 SNMP 社区字符串或数据库密码写入仓库。
+后续阶段 8 整理论文材料时，不要把 SNMP 社区字符串或数据库密码写入仓库。

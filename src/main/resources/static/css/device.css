@@ -355,6 +355,37 @@ main {
     width: calc(100% + 2.4rem);
 }
 
+.dashboard-table-card .table-responsive table {
+    min-width: 720px;
+}
+
+.monitor-table table {
+    min-width: 700px;
+}
+
+.monitor-table th,
+.monitor-table td {
+    white-space: nowrap;
+}
+
+.monitor-table td:last-child {
+    min-width: 220px;
+    white-space: normal;
+}
+
+.table-scroll-hint {
+    display: none;
+    color: #94a3b8;
+    font-size: 0.72rem;
+    font-weight: 400;
+}
+
+@media (max-width: 991.98px) {
+    .table-scroll-hint {
+        display: inline;
+    }
+}
+
 @media (max-width: 991.98px) {
     .summary-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));

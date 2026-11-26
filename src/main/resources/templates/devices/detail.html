@@ -78,7 +78,9 @@
                 <h2>监测历史</h2>
                 <p>每次手动检测或定时检测都会保存一条记录。</p>
             </div>
-            <span class="text-muted small">最近 10 条</span>
+            <span class="text-muted small">最近 10 条
+                <span class="table-scroll-hint">左右滑动查看</span>
+            </span>
         </div>
 
         <div th:if="${latestRecord != null}" class="latest-record">
