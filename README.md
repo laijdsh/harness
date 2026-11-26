@@ -385,6 +385,7 @@ network-monitor-system/
   - `b5bbb0e`：Git 状态文档
   - `13f0c38`：记录 GitHub 远程仓库推送
   - `fc2f9ca`：阶段 4 告警代码、SQL、页面、截图和文档
+  - `6d1614e`：阶段 5 ECharts 看板、趋势接口、本地 ECharts 和文档
 - 远程仓库：
   - <https://github.com/laijdsh/harness>
   - SSH 地址：`git@github.com:laijdsh/harness.git`
